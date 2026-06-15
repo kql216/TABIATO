@@ -273,15 +273,6 @@ function initMap(japan){
       .style('cursor','pointer').node();
     allPaths[code]=el;
     el.addEventListener('click',()=>openPref(code,name));
-    const c=path.centroid(f);
-    if(c&&!isNaN(c[0])&&name.length<=3){
-      svg.append('text').attr('x',c[0]).attr('y',c[1])
-        .attr('text-anchor','middle').attr('dominant-baseline','middle')
-        .attr('font-size','4.5').attr('fill','rgba(255,255,255,.88)')
-        .attr('pointer-events','none')
-        .attr('font-family','-apple-system,BlinkMacSystemFont,sans-serif')
-        .attr('font-weight','600').text(name);
-    }
   });
   document.getElementById('loading').style.display='none';
   document.getElementById('mapSvg').style.display='block';
