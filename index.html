@@ -121,11 +121,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','YuGothic',san
 .visited-color-rows{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
 .visited-row{display:flex;align-items:center;gap:12px;width:100%}
 .visited-row-swatch{
-  width:44px;height:38px;border-radius:14px;flex-shrink:0;
-  background:#ccc;position:relative;display:flex;align-items:center;justify-content:center;
+  width:44px;height:38px;border-radius:14px;flex-shrink:0;background:#ccc;position:relative;display:flex;align-items:center;justify-content:center;
 }
 .visited-row-swatch .check{opacity:0;transform:translate(-50%,-50%)}
-.visited-row.selected .visited-row-swatch .check{opacity:0;transform:translate(-50%,-50%) scale(1.02)} /* 訪問地の✓は消す（維持） */
+.visited-row.selected .visited-row-swatch .check{opacity:0;transform:translate(-50%,-50%) scale(1.02)}
 .visited-row-main{flex:1;min-width:0}
 .visited-row-main input.form-input{width:100%;min-height:44px}
 .visited-toggle{
@@ -321,13 +320,15 @@ let state={
 
 let allPaths={};
 let settingsTab=0;
+
 let pendingHt=null;
 let pendingRes=[];
 let pendingTheme=null;
 
-let currentCities=[];
-let currentPrefCode='';
-let currentPickVisitedColor=null;
+let visitedLabelDraftByColor={};
+let visitedLabelDraftDirty=false;
+
+let pendingPrefDirty=false; // 出身/居住タブ(0,1)の県選択下書きがあるか
 
 function loadState(){
   try{
@@ -371,15 +372,30 @@ function isVisitedColorVisible(hexLower){
 function getVisitedLabelForColor(hexLower){
   const k=normalizeHex(hexLower);
   if(!k) return '未設定';
-  const label=visitedMeta(k).label;
+  const meta=state.theme.visitedByColor?.[k] || {};
+  const draft=visitedLabelDraftByColor?.[k];
+  const label=(draft!==undefined) ? draft : meta.label;
+
   if(label && String(label).trim().length>0) return String(label).trim();
   return '未設定';
 }
 
 function getColor(code){
   const s=getStatus(code);
+  const residenceSettingsMode = settingsTab === 1; // 画面上のタブ状態
 
-  if(s==='hometown'||s==='both') return normalizeHex(state.theme.hometownColor) || UNVISITED_COLOR;
+  if(s==='hometown'){
+    if(residenceSettingsMode) return UNVISITED_COLOR;
+    return normalizeHex(state.theme.hometownColor) || UNVISITED_COLOR;
+  }
+
+  if(s==='both'){
+    if(residenceSettingsMode){
+      return normalizeHex(state.theme.residenceColor) || UNVISITED_COLOR;
+    }
+    return normalizeHex(state.theme.hometownColor) || UNVISITED_COLOR;
+  }
+
   if(s==='residence') return normalizeHex(state.theme.residenceColor) || UNVISITED_COLOR;
 
   if(s==='visited'){
@@ -532,10 +548,23 @@ function showSheet(html){
     renderChipsIfNeeded();
     renderVisitColorPaletteIfNeeded();
     renderThemeColorPaletteIfNeeded();
+    renderSettingsSheetIfNeeded();
   },60);
 }
-function closeSheet(){document.getElementById('overlay').classList.add('hidden');}
-function handleOverlayClick(e){ if(e.target===document.getElementById('overlay')) closeSheet(); }
+
+function renderSettingsSheetIfNeeded(){
+  // settingsTab に応じて描画は renderSettingsSheet() が担う
+}
+
+function closeSheet(){
+  commitPendingSelectionsIfDirty();
+  commitVisitedLabelDraftIfDirty();
+  document.getElementById('overlay').classList.add('hidden');
+}
+
+function handleOverlayClick(e){
+  if(e.target===document.getElementById('overlay')) closeSheet();
+}
 
 document.addEventListener('click',e=>{
   if(!e.target || !(e.target instanceof Element)) return;
@@ -561,6 +590,30 @@ document.addEventListener('click',e=>{
   }
   if(list) list.style.display='none';
 });
+
+function commitPendingSelectionsIfDirty(){
+  if(!pendingPrefDirty) return;
+  state.hometown=pendingHt;
+  state.residences=(pendingRes||[]).filter(x=>x!==state.hometown);
+  pendingPrefDirty=false;
+  saveState();
+  updateUI();
+}
+
+function commitVisitedLabelDraftIfDirty(){
+  if(!visitedLabelDraftDirty) return;
+  state.theme.visitedByColor=state.theme.visitedByColor || {};
+  Object.entries(visitedLabelDraftByColor).forEach(([hexLower,label])=>{
+    const h=normalizeHex(hexLower);
+    if(!h) return;
+    state.theme.visitedByColor[h]=state.theme.visitedByColor[h] || {};
+    state.theme.visitedByColor[h].label=String(label||'');
+  });
+  visitedLabelDraftByColor={};
+  visitedLabelDraftDirty=false;
+  saveState();
+  updateUI();
+}
 
 function openPref(code,name){
   const status=getStatus(code);
@@ -620,6 +673,10 @@ function openPref(code,name){
       ${pill}
     </div>${body}`);
 }
+
+let currentCities=[];
+let currentPrefCode='';
+let currentPickVisitedColor=null;
 
 function visitForm(code,v){
   const today=new Date().toISOString().slice(0,10);
@@ -697,11 +754,6 @@ function renderVisitColorPaletteIfNeeded(){
   if(p) renderVisitColorPalette();
 }
 
-function renderThemeColorPaletteIfNeeded(){
-  const p=document.getElementById('themeColorPalette');
-  if(p) renderThemeColorPalette();
-}
-
 function selectVisitColor(hex){
   currentPickVisitedColor=normalizeHex(hex);
   renderVisitColorPalette();
@@ -777,6 +829,7 @@ function renderChips(){
 function renderChipsIfNeeded(){
   if(document.getElementById('cityChips')) renderChips();
 }
+
 function openCityInput(){
   const wrap=document.getElementById('cityInputWrap');
   if(!wrap) return;
@@ -829,18 +882,59 @@ function removeCity(c){
   renderChips();
 }
 
-// Settings
+// ============ Settings ============
 function openSettings(tab){
   settingsTab=tab||0;
+
   pendingHt=state.hometown;
   pendingRes=[...(state.residences||[])];
   pendingTheme=JSON.parse(JSON.stringify(state.theme||{}));
   if(!pendingTheme.visitedByColor) pendingTheme.visitedByColor={};
+
+  pendingPrefDirty=false;
+
+  if(settingsTab===2){
+    visitedLabelDraftByColor={};
+    visitedLabelDraftDirty=false;
+  }
+
   renderSettingsSheet();
 }
 
 function switchSettingsTab(tab){
+  // タブ移動タイミングでまとめて保存（0,1,2の全下書きをコミット）
+  commitPendingSelectionsIfDirty();
+  commitVisitedLabelDraftIfDirty();
+
   settingsTab=tab;
+  if(settingsTab===2){
+    visitedLabelDraftByColor={};
+    visitedLabelDraftDirty=false;
+  }
+
+  renderSettingsSheet();
+}
+
+function onThemeColorPick(hex){
+  const h=normalizeHex(hex);
+  if(!h) return;
+
+  const htColor=normalizeHex(state.theme.hometownColor);
+  if(settingsTab===1 && htColor && h===htColor){
+    return;
+  }
+
+  if(settingsTab===0){
+    state.hometownColor=h;
+    state.theme.hometownColor=h;
+  }else if(settingsTab===1){
+    state.theme.residenceColor=h;
+  }else{
+    state.theme.visitedDefaultColor=h;
+  }
+
+  saveState();
+  updateUI();
   renderSettingsSheet();
 }
 
@@ -852,8 +946,20 @@ function renderThemeColorPalette(){
     settingsTab===0 ? state.theme.hometownColor : (settingsTab===1 ? state.theme.residenceColor : state.theme.visitedDefaultColor)
   );
 
+  const htColor=normalizeHex(state.theme.hometownColor);
+
   palette.innerHTML=RAINBOW_PALETTE_HEX.map(hex=>{
     const selected=(selectedLower && hex===selectedLower);
+
+    const isForbidden=(settingsTab===1 && htColor && hex===htColor);
+    if(isForbidden){
+      return `
+        <button class="color-swatch" style="background:${hex};opacity:.35;cursor:not-allowed" type="button" aria-label="選択不可">
+          <span class="check"><b style="font-weight:900;">✓</b></span>
+        </button>
+      `;
+    }
+
     return `
       <button class="color-swatch ${selected?'selected':''}" style="background:${hex}" type="button" data-color="${hex}" onclick="onThemeColorPick('${hex}',this)" aria-label="色選択">
         <span class="check"><b style="font-weight:900;">✓</b></span>
@@ -862,154 +968,40 @@ function renderThemeColorPalette(){
   }).join('');
 }
 
-function onThemeColorPick(hex,el){
-  const h=normalizeHex(hex);
-  if(!h) return;
-
-  if(settingsTab===0){
-    state.hometownColor=h;
-    state.theme.hometownColor=h;
-  } else if(settingsTab===1){
-    state.theme.residenceColor=h;
-  } else {
-    state.theme.visitedDefaultColor=h;
-  }
-  saveState();
-  updateUI();
-  renderSettingsSheet();
-}
-
-function settingsTogglePref(id,el){
-  if(settingsTab===0){
-    pendingHt=(pendingHt===id)?null:id;
-    state.hometown=pendingHt;
-    state.residences=pendingRes.filter(x=>x!==pendingHt);
-  }else if(settingsTab===1){
-    if(pendingHt===id) return;
-    if(pendingRes.includes(id)){
-      pendingRes=pendingRes.filter(x=>x!==id);
-      el.classList.remove('sel-res');
-    }else{
-      pendingRes.push(id);
-      el.classList.add('sel-res');
-    }
-    state.residences=pendingRes.slice();
-  }
-  state.hometown=pendingHt;
-  state.residences=(state.residences||[]).filter(x=>x!==state.hometown);
-
-  saveState();
-  updateUI();
-  renderSettingsSheet();
-}
-
-function renderVisitedSettingsRows(){
-  const ht=normalizeHex(state.theme.hometownColor);
-  const res=normalizeHex(state.theme.residenceColor);
-
-  return RAINBOW_PALETTE_HEX
-    .filter(hex=>hex!==ht && hex!==res)
-    .map(hex=>{
-      const meta=state.theme.visitedByColor?.[hex] || {};
-      const label=(meta.label && String(meta.label).trim().length>0)?String(meta.label).trim():'';
-      const visible=(meta.visible===false)?false:true;
-      const isDefault=(state.theme.visitedDefaultColor && hex===normalizeHex(state.theme.visitedDefaultColor));
-
-      // 訪問地の✓は消す（visible/非visible関係なく出さない）
-      const checkHtml='';
-
-      return `
-        <div class="visited-row ${isDefault?'selected':''}">
-          <div class="visited-row-swatch" style="background:${hex}">
-            ${checkHtml}
-          </div>
-
-          <div class="visited-row-main">
-            <input class="form-input" type="text"
-              value="${escapeHtml(label)}"
-              placeholder=""
-              maxlength="12"
-              oninput="onVisitedLabel('${hex}',this.value)">
-          </div>
-
-          <button class="visited-toggle ${visible?'on':''}" type="button" onclick="onVisitedVisible('${hex}')">
-            ${visible?'表示':'非表示'}
-          </button>
-        </div>
-      `;
-    }).join('');
-}
-
-function onVisitedLabel(hex,value){
-  const k=normalizeHex(hex);
-  if(!k) return;
-  state.theme.visitedByColor=state.theme.visitedByColor||{};
-  state.theme.visitedByColor[k]=state.theme.visitedByColor[k]||{};
-  state.theme.visitedByColor[k].label=String(value||'');
-  saveState();
-  updateUI();
-  renderSettingsSheet();
-}
-
-function onVisitedVisible(hex){
-  const k=normalizeHex(hex);
-  if(!k) return;
-
-  state.theme.visitedByColor=state.theme.visitedByColor||{};
-  state.theme.visitedByColor[k]=state.theme.visitedByColor[k]||{};
-  const cur=state.theme.visitedByColor[k].visible;
-  state.theme.visitedByColor[k].visible=(cur===false)?true:false;
-
-  if(!isVisitedColorVisible(state.theme.visitedDefaultColor)){
-    const ht=normalizeHex(state.theme.hometownColor);
-    const res=normalizeHex(state.theme.residenceColor);
-    const first=RAINBOW_PALETTE_HEX.find(c=>c!==ht && c!==res && isVisitedColorVisible(c));
-    state.theme.visitedDefaultColor=first || null;
-  }
-
-  saveState();
-  updateUI();
-  renderSettingsSheet();
+function renderThemeColorPaletteIfNeeded(){
+  const p=document.getElementById('themeColorPalette');
+  if(p) renderThemeColorPalette();
 }
 
 function renderSettingsSheet(){
   if(settingsTab===0 || settingsTab===1){
     const isHt=settingsTab===0;
 
-    pendingRes=[...(state.residences||[])];
-    pendingHt=state.hometown;
-
     const htColor=normalizeHex(state.theme.hometownColor) || UNVISITED_COLOR;
     const resColor=normalizeHex(state.theme.residenceColor) || UNVISITED_COLOR;
 
     let grid='';
     PREFS_LIST.forEach(p=>{
-      let cls='';
-      let onclick=`onclick="settingsTogglePref('${p.id}',this)"`;
+      const onclick=`onclick="settingsTogglePref('${p.id}',this)"`;
 
-      // 選択中県の見た目を「選んだ色」で塗る（B 要件）
       if(isHt){
         if(pendingHt===p.id){
-          const chosenColor=htColor;
-          cls=''; // 固定クラスを使わずstyleで反映
-          onclick=`onclick="settingsTogglePref('${p.id}',this)"`;
-          grid+=`<div class="pref-opt" ${onclick} style="background:${chosenColor};border-color:${chosenColor};color:#fff;">${p.name}</div>`;
+          grid+=`<div class="pref-opt" ${onclick} style="background:${htColor};border-color:${htColor};color:#fff;">${p.name}</div>`;
           return;
         }
       }else{
         if(pendingHt===p.id){
-          cls='disabled-ht';
-          onclick='';
-        }else if(pendingRes.includes(p.id)){
-          const chosenColor=resColor;
-          cls=''; // 固定クラスを使わずstyleで反映
-          onclick=`onclick="settingsTogglePref('${p.id}',this)"`;
-          grid+=`<div class="pref-opt" ${onclick} style="background:${chosenColor};border-color:${chosenColor};color:#fff;">${p.name}</div>`;
+          grid+=`<div class="pref-opt disabled-ht">${p.name}</div>`;
+          return;
+        }
+
+        if(pendingRes.includes(p.id)){
+          grid+=`<div class="pref-opt" ${onclick} style="background:${resColor};border-color:${resColor};color:#fff;">${p.name}</div>`;
           return;
         }
       }
 
-      grid+=`<div class="pref-opt ${cls}" ${onclick}>${p.name}</div>`;
+      grid+=`<div class="pref-opt" ${onclick}>${p.name}</div>`;
     });
 
     const title='設定';
@@ -1061,6 +1053,100 @@ function renderSettingsSheet(){
       <button class="btn btn-ghost" onclick="closeSheet()">閉じる</button>
     </div>
   `);
+}
+
+function settingsTogglePref(id,el){
+  // 県クリックは「即反映」しない。下書きだけ更新して、画面は再描画する
+  if(settingsTab===0){
+    pendingHt=(pendingHt===id)?null:id;
+    // 出身地を変更したら、居住地の下書きから出身地を消す（色の重複回避）
+    pendingRes=(pendingRes||[]).filter(x=>x!==pendingHt);
+  }else if(settingsTab===1){
+    if(pendingHt===id) return;
+    if(pendingRes.includes(id)){
+      pendingRes=pendingRes.filter(x=>x!==id);
+      el.classList.remove('sel-res');
+    }else{
+      pendingRes.push(id);
+      el.classList.add('sel-res');
+    }
+    pendingRes=(pendingRes||[]).filter(x=>x!==pendingHt);
+  }
+
+  pendingPrefDirty=true;
+
+  // 地図や保存はしない。UI（選択中の色だけ）を今すぐ反映
+  renderSettingsSheet();
+}
+
+function renderVisitedSettingsRows(){
+  const ht=normalizeHex(state.theme.hometownColor);
+  const res=normalizeHex(state.theme.residenceColor);
+
+  return RAINBOW_PALETTE_HEX
+    .filter(hex=>hex!==ht && hex!==res)
+    .map(hex=>{
+      const meta=state.theme.visitedByColor?.[hex] || {};
+      const draftLabel=visitedLabelDraftByColor?.[hex];
+      const labelToShow=(draftLabel!==undefined)
+        ? draftLabel
+        : (meta.label && String(meta.label).trim().length>0 ? String(meta.label).trim() : '');
+
+      const visible=(meta.visible===false)?false:true;
+      const isDefault=(state.theme.visitedDefaultColor && hex===normalizeHex(state.theme.visitedDefaultColor));
+
+      return `
+        <div class="visited-row ${isDefault?'selected':''}">
+          <div class="visited-row-swatch" style="background:${hex}"></div>
+
+          <div class="visited-row-main">
+            <input class="form-input" type="text"
+              value="${escapeHtml(labelToShow)}"
+              placeholder=""
+              maxlength="12"
+              oninput="onVisitedLabel('${hex}',this.value)">
+          </div>
+
+          <button class="visited-toggle ${visible?'on':''}" type="button" onclick="onVisitedVisible('${hex}')">
+            ${visible?'表示':'非表示'}
+          </button>
+        </div>
+      `;
+    }).join('');
+}
+
+function onVisitedLabel(hex,value){
+  const k=normalizeHex(hex);
+  if(!k) return;
+
+  visitedLabelDraftByColor=visitedLabelDraftByColor || {};
+  visitedLabelDraftByColor[k]=String(value||'');
+
+  visitedLabelDraftDirty=true;
+
+  updateLegend();
+}
+
+function onVisitedVisible(hex){
+  const k=normalizeHex(hex);
+  if(!k) return;
+
+  state.theme.visitedByColor=state.theme.visitedByColor||{};
+  state.theme.visitedByColor[k]=state.theme.visitedByColor[k]||{};
+  const cur=state.theme.visitedByColor[k].visible;
+  state.theme.visitedByColor[k].visible=(cur===false)?true:false;
+
+  if(!isVisitedColorVisible(state.theme.visitedDefaultColor)){
+    const ht=normalizeHex(state.theme.hometownColor);
+    const res=normalizeHex(state.theme.residenceColor);
+    const first=RAINBOW_PALETTE_HEX.find(c=>c!==ht && c!==res && isVisitedColorVisible(c));
+    state.theme.visitedDefaultColor=first || null;
+  }
+
+  commitVisitedLabelDraftIfDirty();
+  saveState();
+  updateUI();
+  renderSettingsSheet();
 }
 
 loadState();
