@@ -1,674 +1,1209 @@
 <!-- TABIATO: 出身/居住の県グリッド（B）の選択色を state.theme.* に連動 -->
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link rel="apple-touch-icon" sizes="180x180" href="/TABIATO/apple-touch-icon.png">
-<title>TABIATO</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;overflow:hidden}
-body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','YuGothic',sans-serif;background:#f5f5f0;display:flex;flex-direction:column;height:100dvh}
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="apple-touch-icon" sizes="180x180" href="/TABIATO/apple-touch-icon.png">
+  <title>TABIATO</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent
+    }
 
-.header{background:#f5f5f0;padding:14px 18px 8px;padding-top:max(14px,env(safe-area-inset-top));display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.counter-group{display:flex;align-items:baseline;gap:5px}
-.counter-num{font-size:30px;font-weight:800;color:#1a1a1a;letter-spacing:-1.5px;line-height:1}
-.counter-denom{font-size:14px;font-weight:500;color:#bbb}
-.gear-btn{width:38px;height:38px;border-radius:50%;background:#eaeae5;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#666;transition:background .15s;flex-shrink:background .15s;transition:background .15s;flex-shrink:0}
-.gear-btn:active{background:#d8d8d2}
+    html,
+    body {
+      height: 100%;
+      overflow: hidden
+    }
 
-.progress-wrap{padding:0 18px 10px;flex-shrink:0}
-.progress-track{height:3px;background:#e4e4dc;border-radius:2px;overflow:hidden}
-.progress-fill{height:100%;background:#2d7a4f;border-radius:2px;transition:width .4s ease}
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'YuGothic', sans-serif;
+      background: #f5f5f0;
+      display: flex;
+      flex-direction: column;
+      height: 100dvh
+    }
 
-.map-wrap{flex:1;overflow:hidden;position:relative;touch-action:none}
-#mapSvg{width:100%;height:100%;display:none;transform-origin:0 0}
-.loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;color:#bbb;letter-spacing:.3px}
+    .header {
+      background: #f5f5f0;
+      padding: 14px 18px 8px;
+      padding-top: max(14px, env(safe-area-inset-top));
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0
+    }
 
-.legend-row{
-  padding:10px 14px;
-  padding-bottom:max(18px + env(safe-area-inset-bottom));
-  display:flex;
-  flex-wrap:wrap;
-  gap:10px 14px;
-  align-items:flex-start;
-  justify-content:center;
-  background:#f5f5f0;
-}
-.leg{display:flex;align-items:center;gap:6px;font-size:11px;color:#aaa;letter-spacing:.2px;white-space:nowrap}
-.leg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+    .counter-group {
+      display: flex;
+      align-items: baseline;
+      gap: 5px
+    }
 
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.32);z-index:100;display:flex;align-items:flex-end;justify-content:center}
-.overlay.hidden{display:none}
-.sheet{background:#fff;border-radius:24px 24px 0 0;width:100%;max-width:600px;padding:0 0 max(28px,env(safe-area-inset-bottom));animation:slideUp .3s cubic-bezier(.32,.72,0,1);max-height:92dvh;overflow-y:auto;-webkit-overflow-scrolling:touch}
-@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.sheet-handle{width:36px;height:4px;background:#e5e5e5;border-radius:2px;margin:12px auto 18px}
-.sheet-inner{padding:0 20px}
+    .counter-num {
+      font-size: 30px;
+      font-weight: 800;
+      color: #1a1a1a;
+      letter-spacing: -1.5px;
+      line-height: 1
+    }
 
-.pref-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px}
-.pref-name{font-size:22px;font-weight:800;color:#1a1a1a;letter-spacing:-.5px}
-.pref-region{font-size:12px;color:#ccc;margin-top:3px;letter-spacing:.3px}
-.status-pill{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.3px;flex-shrink:0;margin-top:4px}
-.pill-visited{background:#e8f5ee;color:#2d7a4f}
-.pill-hometown{background:#e8f0fb;color:#2255b0}
-.pill-residence{background:#eef3fc;color:#5580cc}
-.pill-none{background:#f0f0ec;color:#bbb}
+    .counter-denom {
+      font-size: 14px;
+      font-weight: 500;
+      color: #bbb
+    }
 
-.form-section{margin-bottom:14px}
-.form-label{font-size:10px;font-weight:700;color:#bbb;text-transform:uppercase;letter-spacing:.9px;margin-bottom:6px;display:block}
-.form-input{width:100%;padding:11px 13px;border-radius:13px;border:1.5px solid #eeeee9;background:#f8f8f5;font-size:16px;color:#1a1a1a;font-family:inherit;outline:none;-webkit-appearance:none;transition:border-color .15s,background .15s}
-.form-input:focus{border-color:#2d7a4f;background:#fff}
-.date-range-wrap{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px}
-.date-sep{font-size:13px;color:#ccc;text-align:center;flex-shrink:0}
+    .gear-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: #eaeae5;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #666;
+      transition: background .15s;
+      flex-shrink: background .15s;
+      transition: background .15s;
+      flex-shrink: 0
+    }
 
-.city-chips-row{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;align-items:center}
-.chip{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:20px;background:#e8f5ee;color:#2d7a4f;font-size:12px;font-weight:600;cursor:pointer;border:none;-webkit-appearance:none}
-.chip .chip-x{font-size:14px;color:#2d7a4f;line-height:1;margin-left:1px}
-.chip-add-btn{display:inline-flex;align-items:center;gap:3px;padding:5px 10px;border-radius:20px;background:none;border:1.5px dashed #ccc;color:#aaa;font-size:12px;font-weight:600;cursor:pointer;-webkit-appearance:none;transition:all .15s}
-.chip-add-btn:active{background:#f5f5f5}
-.city-input-wrap{position:relative;margin-top:8px}
-.suggest-list{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1.5px solid #eeeee9;border-radius:13px;max-height:160px;overflow-y:auto;z-index:10;-webkit-overflow-scrolling:touch;box-shadow:0 4px 20px rgba(0,0,0,.08)}
-.suggest-item{padding:11px 14px;font-size:14px;color:#1a1a1a;cursor:pointer;border-bottom:1px solid #f4f4f0}
-.suggest-item:last-child{border-bottom:none}
-.suggest-item:active{background:#f8f8f5}
-.suggest-empty{padding:11px 14px;font-size:13px;color:#bbb}
+    .gear-btn:active {
+      background: #d8d8d2
+    }
 
-.visit-detail{background:#f8f8f5;border-radius:14px;padding:14px;margin-bottom:16px}
-.detail-row{display:flex;justify-content:space-between;align-items:flex-start;padding:6px 0}
-.detail-row+.detail-row{border-top:1px solid #eeeee9}
-.detail-key{font-size:12px;color:#bbb;flex-shrink:0;padding-right:12px}
-.detail-val{font-size:14px;color:#1a1a1a;font-weight:500;text-align:right;word-break:break-all}
+    .progress-wrap {
+      padding: 0 18px 10px;
+      flex-shrink: 0
+    }
 
-.btn-group{display:flex;gap:9px}
-.btn{flex:1;padding:14px;border-radius:14px;font-size:15px;font-weight:800;font-family:inherit;border:none;cursor:pointer;-webkit-appearance:none;transition:opacity .12s}
-.btn:active{opacity:.7}
-.btn-ghost{background:#f0f0ec;color:#555}
-.btn-green{background:#2d7a4f;color:#fff}
-.btn-blue{background:#2255b0;color:#fff}
-.del-link{background:none;border:none;font-size:13px;color:#e05252;cursor:pointer;padding:11px 0 0;display:block;text-align:center;-webkit-appearance:none}
+    .progress-track {
+      height: 3px;
+      background: #e4e4dc;
+      border-radius: 2px;
+      overflow: hidden
+    }
 
-.color-palette{display:flex;flex-wrap:wrap;gap:10px}
-.color-swatch{
-  width:44px;height:38px;border-radius:14px;
-  cursor:pointer;border:0;outline:none;
-  transition:transform .12s;
-  flex-shrink:0;display:flex;align-items:center;justify-content:center;
-  position:relative;-webkit-appearance:none;background:#ccc;
-}
-.color-swatch:active{transform:scale(.98)}
-.check{
-  position:absolute;left:50%;top:50%;
-  transform:translate(-50%,-50%);
-  color:#fff;font-weight:900;font-size:22px;line-height:1;
-  opacity:0;transition:opacity .12s,transform .12s;
-}
-.color-swatch.selected .check{opacity:1;transform:translate(-50%,-50%) scale(1.02)}
+    .progress-fill {
+      height: 100%;
+      background: #2d7a4f;
+      border-radius: 2px;
+      transition: width .4s ease
+    }
 
-.settings-tabs{display:flex;gap:0;margin-bottom:18px;background:#f0f0ec;border-radius:12px;padding:3px}
-.stab{flex:1;padding:8px;border-radius:10px;text-align:center;font-size:13px;font-weight:600;color:#aaa;cursor:pointer;border:none;background:none;-webkit-appearance:none;transition:all .15s}
-.stab.active{background:#fff;color:#1a1a1a;box-shadow:0 1px 4px rgba(0,0,0,.08)}
-.settings-title{font-size:22px;font-weight:800;color:#1a1a1a;letter-spacing:-.5px;margin-bottom:4px}
-.settings-sub{font-size:13px;color:#bbb;margin-bottom:16px;line-height:1.5}
+    .map-wrap {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      touch-action: none
+    }
 
-.pref-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;max-height:200px;overflow-y:auto;margin-bottom:16px;-webkit-overflow-scrolling:touch}
-.pref-opt{
-  padding:9px 4px;border-radius:10px;
-  border:1.5px solid #eeeee9;background:#f8f8f5;
-  font-size:11px;text-align:center;cursor:pointer;color:#555;font-weight:600;
-  transition:all .12s;-webkit-appearance:none;
-}
-.pref-opt:active{opacity:.7}
-.pref-opt.disabled-ht{background:#f0f0ec;color:#ccc;border-color:#eee;cursor:not-allowed;opacity:.6}
+    #mapSvg {
+      width: 100%;
+      height: 100%;
+      display: none;
+      transform-origin: 0 0
+    }
 
-.visited-color-rows{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
-.visited-row{display:flex;align-items:center;gap:12px;width:100%}
-.visited-row-swatch{
-  width:44px;height:38px;border-radius:14px;flex-shrink:0;background:#ccc;position:relative;display:flex;align-items:center;justify-content:center;
-}
-.visited-row-swatch .check{opacity:0;transform:translate(-50%,-50%)}
-.visited-row.selected .visited-row-swatch .check{opacity:0;transform:translate(-50%,-50%) scale(1.02)}
-.visited-row-main{flex:1;min-width:0}
-.visited-row-main input.form-input{width:100%;min-height:44px}
-.visited-toggle{
-  width:130px;flex-shrink:0;
-  padding:10px 10px;border-radius:12px;border:1.5px solid #eeeee9;
-  background:#f8f8f5;font-size:14px;font-weight:800;color:#555;
-  cursor:pointer;-webkit-appearance:none;display:block;
-}
-.visited-toggle:active{opacity:.7}
-.visited-toggle.on{background:#fff;border-color:#2d7a4f;color:#2d7a4f}
-</style>
+    .loading {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      color: #bbb;
+      letter-spacing: .3px
+    }
+
+    .legend-row {
+      padding: 10px 14px;
+      padding-bottom: max(18px + env(safe-area-inset-bottom));
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 14px;
+      align-items: flex-start;
+      justify-content: center;
+      background: #f5f5f0;
+    }
+
+    .leg {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: #aaa;
+      letter-spacing: .2px;
+      white-space: nowrap
+    }
+
+    .leg-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .32);
+      z-index: 100;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center
+    }
+
+    .overlay.hidden {
+      display: none
+    }
+
+    .sheet {
+      background: #fff;
+      border-radius: 24px 24px 0 0;
+      width: 100%;
+      max-width: 600px;
+      padding: 0 0 max(28px, env(safe-area-inset-bottom));
+      animation: slideUp .3s cubic-bezier(.32, .72, 0, 1);
+      max-height: 92dvh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(100%)
+      }
+
+      to {
+        transform: translateY(0)
+      }
+    }
+
+    .sheet-handle {
+      width: 36px;
+      height: 4px;
+      background: #e5e5e5;
+      border-radius: 2px;
+      margin: 12px auto 18px
+    }
+
+    .sheet-inner {
+      padding: 0 20px
+    }
+
+    .pref-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 18px
+    }
+
+    .pref-name {
+      font-size: 22px;
+      font-weight: 800;
+      color: #1a1a1a;
+      letter-spacing: -.5px
+    }
+
+    .pref-region {
+      font-size: 12px;
+      color: #ccc;
+      margin-top: 3px;
+      letter-spacing: .3px
+    }
+
+    .status-pill {
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .3px;
+      flex-shrink: 0;
+      margin-top: 4px
+    }
+
+    .pill-visited {
+      background: #e8f5ee;
+      color: #2d7a4f
+    }
+
+    .pill-hometown {
+      background: #e8f0fb;
+      color: #2255b0
+    }
+
+    .pill-residence {
+      background: #eef3fc;
+      color: #5580cc
+    }
+
+    .pill-none {
+      background: #f0f0ec;
+      color: #bbb
+    }
+
+    .form-section {
+      margin-bottom: 14px
+    }
+
+    .form-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: #bbb;
+      text-transform: uppercase;
+      letter-spacing: .9px;
+      margin-bottom: 6px;
+      display: block
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 11px 13px;
+      border-radius: 13px;
+      border: 1.5px solid #eeeee9;
+      background: #f8f8f5;
+      font-size: 16px;
+      color: #1a1a1a;
+      font-family: inherit;
+      outline: none;
+      -webkit-appearance: none;
+      transition: border-color .15s, background .15s
+    }
+
+    .form-input:focus {
+      border-color: #2d7a4f;
+      background: #fff
+    }
+
+    .date-range-wrap {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 6px
+    }
+
+    .date-sep {
+      font-size: 13px;
+      color: #ccc;
+      text-align: center;
+      flex-shrink: 0
+    }
+
+    .city-chips-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 8px;
+      align-items: center
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 5px 10px;
+      border-radius: 20px;
+      background: #e8f5ee;
+      color: #2d7a4f;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      -webkit-appearance: none
+    }
+
+    .chip .chip-x {
+      font-size: 14px;
+      color: #2d7a4f;
+      line-height: 1;
+      margin-left: 1px
+    }
+
+    .chip-add-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 5px 10px;
+      border-radius: 20px;
+      background: none;
+      border: 1.5px dashed #ccc;
+      color: #aaa;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      -webkit-appearance: none;
+      transition: all .15s
+    }
+
+    .chip-add-btn:active {
+      background: #f5f5f5
+    }
+
+    .city-input-wrap {
+      position: relative;
+      margin-top: 8px
+    }
+
+    .suggest-list {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      background: #fff;
+      border: 1.5px solid #eeeee9;
+      border-radius: 13px;
+      max-height: 160px;
+      overflow-y: auto;
+      z-index: 10;
+      -webkit-overflow-scrolling: touch;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, .08)
+    }
+
+    .suggest-item {
+      padding: 11px 14px;
+      font-size: 14px;
+      color: #1a1a1a;
+      cursor: pointer;
+      border-bottom: 1px solid #f4f4f0
+    }
+
+    .suggest-item:last-child {
+      border-bottom: none
+    }
+
+    .suggest-item:active {
+      background: #f8f8f5
+    }
+
+    .suggest-empty {
+      padding: 11px 14px;
+      font-size: 13px;
+      color: #bbb
+    }
+
+    .visit-detail {
+      background: #f8f8f5;
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 16px
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 6px 0
+    }
+
+    .detail-row+.detail-row {
+      border-top: 1px solid #eeeee9
+    }
+
+    .detail-key {
+      font-size: 12px;
+      color: #bbb;
+      flex-shrink: 0;
+      padding-right: 12px
+    }
+
+    .detail-val {
+      font-size: 14px;
+      color: #1a1a1a;
+      font-weight: 500;
+      text-align: right;
+      word-break: break-all
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 9px
+    }
+
+    .btn {
+      flex: 1;
+      padding: 14px;
+      border-radius: 14px;
+      font-size: 15px;
+      font-weight: 800;
+      font-family: inherit;
+      border: none;
+      cursor: pointer;
+      -webkit-appearance: none;
+      transition: opacity .12s
+    }
+
+    .btn:active {
+      opacity: .7
+    }
+
+    .btn-ghost {
+      background: #f0f0ec;
+      color: #555
+    }
+
+    .btn-green {
+      background: #2d7a4f;
+      color: #fff
+    }
+
+    .btn-blue {
+      background: #2255b0;
+      color: #fff
+    }
+
+    .del-link {
+      background: none;
+      border: none;
+      font-size: 13px;
+      color: #e05252;
+      cursor: pointer;
+      padding: 11px 0 0;
+      display: block;
+      text-align: center;
+      -webkit-appearance: none
+    }
+
+    .color-palette {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px
+    }
+
+    .color-swatch {
+      width: 44px;
+      height: 38px;
+      border-radius: 14px;
+      cursor: pointer;
+      border: 0;
+      outline: none;
+      transition: transform .12s;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      -webkit-appearance: none;
+      background: #ccc;
+    }
+
+    .color-swatch:active {
+      transform: scale(.98)
+    }
+
+    .check {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      color: #fff;
+      font-weight: 900;
+      font-size: 22px;
+      line-height: 1;
+      opacity: 0;
+      transition: opacity .12s, transform .12s;
+    }
+
+    .color-swatch.selected .check {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1.02)
+    }
+
+    .settings-tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 18px;
+      background: #f0f0ec;
+      border-radius: 12px;
+      padding: 3px
+    }
+
+    .stab {
+      flex: 1;
+      padding: 8px;
+      border-radius: 10px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: #aaa;
+      cursor: pointer;
+      border: none;
+      background: none;
+      -webkit-appearance: none;
+      transition: all .15s
+    }
+
+    .stab.active {
+      background: #fff;
+      color: #1a1a1a;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, .08)
+    }
+
+    .settings-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: #1a1a1a;
+      letter-spacing: -.5px;
+      margin-bottom: 4px
+    }
+
+    .settings-sub {
+      font-size: 13px;
+      color: #bbb;
+      margin-bottom: 16px;
+      line-height: 1.5
+    }
+
+    .pref-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5px;
+      max-height: 200px;
+      overflow-y: auto;
+      margin-bottom: 16px;
+      -webkit-overflow-scrolling: touch
+    }
+
+    .pref-opt {
+      padding: 9px 4px;
+      border-radius: 10px;
+      border: 1.5px solid #eeeee9;
+      background: #f8f8f5;
+      font-size: 11px;
+      text-align: center;
+      cursor: pointer;
+      color: #555;
+      font-weight: 600;
+      transition: all .12s;
+      -webkit-appearance: none;
+    }
+
+    .pref-opt:active {
+      opacity: .7
+    }
+
+    .pref-opt.disabled-ht {
+      background: #f0f0ec;
+      color: #ccc;
+      border-color: #eee;
+      cursor: not-allowed;
+      opacity: .6
+    }
+
+    .visited-color-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 16px
+    }
+
+    .visited-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%
+    }
+
+    .visited-row-swatch {
+      width: 44px;
+      height: 38px;
+      border-radius: 14px;
+      flex-shrink: 0;
+      background: #ccc;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .visited-row-swatch .check {
+      opacity: 0;
+      transform: translate(-50%, -50%)
+    }
+
+    .visited-row.selected .visited-row-swatch .check {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(1.02)
+    }
+
+    .visited-row-main {
+      flex: 1;
+      min-width: 0
+    }
+
+    .visited-row-main input.form-input {
+      width: 100%;
+      min-height: 44px
+    }
+
+    .visited-toggle {
+      width: 130px;
+      flex-shrink: 0;
+      padding: 10px 10px;
+      border-radius: 12px;
+      border: 1.5px solid #eeeee9;
+      background: #f8f8f5;
+      font-size: 14px;
+      font-weight: 800;
+      color: #555;
+      cursor: pointer;
+      -webkit-appearance: none;
+      display: block;
+    }
+
+    .visited-toggle:active {
+      opacity: .7
+    }
+
+    .visited-toggle.on {
+      background: #fff;
+      border-color: #2d7a4f;
+      color: #2d7a4f
+    }
+  </style>
 </head>
+
 <body>
 
-<div class="header">
-  <div class="counter-group">
-    <span class="counter-num" id="cnt">0</span>
-    <span class="counter-denom">/ 47</span>
+  <div class="header">
+    <div class="counter-group">
+      <span class="counter-num" id="cnt">0</span>
+      <span class="counter-denom">/ 47</span>
+    </div>
+    <button class="gear-btn" onclick="openSettings(0)" aria-label="設定">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3" />
+        <path
+          d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+      </svg>
+    </button>
   </div>
-  <button class="gear-btn" onclick="openSettings(0)" aria-label="設定">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="12" r="3"/>
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-    </svg>
-  </button>
-</div>
 
-<div class="progress-wrap">
-  <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
-</div>
-
-<div class="map-wrap" id="mapWrap">
-  <div id="loading" class="loading">地図を読み込み中...</div>
-  <svg id="mapSvg" viewBox="0 0 850 680"></svg>
-</div>
-
-<div class="legend-row" id="legendRow" aria-label="凡例"></div>
-
-<div class="overlay hidden" id="overlay" onclick="handleOverlayClick(event)">
-  <div class="sheet" id="sheet">
-    <div class="sheet-handle"></div>
-    <div class="sheet-inner" id="sheetContent"></div>
+  <div class="progress-wrap">
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
   </div>
-</div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js" crossorigin="anonymous"></script>
-<script>
-const PREF_MAP={
-  '01':'北海道','02':'青森','03':'岩手','04':'宮城','05':'秋田',
-  '06':'山形','07':'福島','08':'茨城','09':'栃木','10':'群馬',
-  '11':'埼玉','12':'千葉','13':'東京','14':'神奈川','15':'新潟',
-  '16':'富山','17':'石川','18':'福井','19':'山梨','20':'長野',
-  '21':'岐阜','22':'静岡','23':'愛知','24':'三重','25':'滋賀',
-  '26':'京都','27':'大阪','28':'兵庫','29':'奈良','30':'和歌山',
-  '31':'鳥取','32':'島根','33':'岡山','34':'広島','35':'山口',
-  '36':'徳島','37':'香川','38':'愛媛','39':'高知','40':'福岡',
-  '41':'佐賀','42':'長崎','43':'熊本','44':'大分','45':'宮崎',
-  '46':'鹿児島','47':'沖縄'
-};
-const REGION_MAP={
-  '01':'北海道','02':'東北','03':'東北','04':'東北','05':'東北','06':'東北','07':'東北',
-  '08':'関東','09':'関東','10':'関東','11':'関東','12':'関東','13':'関東','14':'関東',
-  '15':'中部','16':'中部','17':'中部','18':'中部','19':'中部','20':'中部','21':'中部','22':'中部','23':'中部',
-  '24':'近畿','25':'近畿','26':'近畿','27':'近畿','28':'近畿','29':'近畿','30':'近畿',
-  '31':'中国','32':'中国','33':'中国','34':'中国','35':'中国',
-  '36':'四国','37':'四国','38':'四国','39':'四国',
-  '40':'九州','41':'九州','42':'九州','43':'九州','44':'九州','45':'九州','46':'九州','47':'九州'
-};
-const CITIES={
-  '01':['札幌市','函館市','旭川市','釧路市','帯広市','北見市','小樽市','苫小牧市','室蘭市','江別市'],
-  '02':['青森市','弘前市','八戸市','黒石市','五所川原市','十和田市','三沢市','むつ市'],
-  '03':['盛岡市','宮古市','大船渡市','花巻市','北上市','久慈市','遠野市','一関市','釜石市','奥州市'],
-  '04':['仙台市','石巻市','塩竈市','気仙沼市','白石市','名取市','多賀城市','岩沼市','登米市','栗原市'],
-  '05':['秋田市','能代市','横手市','大館市','男鹿市','湯沢市','鹿角市','由利本荘市','大仙市','北秋田市'],
-  '06':['山形市','米沢市','鶴岡市','酒田市','新庄市','寒河江市','上山市','村山市','長井市','天童市'],
-  '07':['福島市','会津若松市','郡山市','いわき市','白河市','須賀川市','喜多方市','相馬市','南相馬市','二本松市'],
-  '08':['水戸市','日立市','土浦市','古河市','石岡市','結城市','龍ヶ崎市','下妻市','常総市','常陸太田市','つくば市','ひたちなか市'],
-  '09':['宇都宮市','足利市','栃木市','佐野市','鹿沼市','日光市','小山市','真岡市','大田原市','矢板市','那須塩原市'],
-  '10':['前橋市','高崎市','桐生市','伊勢崎市','太田市','沼田市','館林市','渋川市','藤岡市','富岡市'],
-  '11':['さいたま市','川越市','熊谷市','川口市','行田市','秩父市','所沢市','飯能市','加須市','本庄市','春日部市','狭山市','鴻巣市','深谷市','上尾市','草加市','越谷市','蕨市','朝霞市','志木市','和光市','新座市','桶川市','久喜市'],
-  '12':['千葉市','銚子市','市川市','船橋市','館山市','木更津市','松戸市','野田市','茂原市','成田市','佐倉市','東金市','旭市','習志野市','柏市','勝浦市','市原市','流山市','八千代市','我孫子市','鴨川市','鎌ヶ谷市','君津市','富津市','浦安市'],
-  '13':['千代田区','中央区','港区','新宿区','文京区','台東区','墨田区','江東区','品川区','目黒区','大田区','世田谷区','渋谷区','中野区','杉並区','豊島区','北区','荒川区','板橋区','練馬区','足立区','葛飾区','江戸川区'],
-  '14':['横浜市','川崎市','相模原市','横須賀市','平塚市','鎌倉市','藤沢市','小田原市','茅ヶ崎市','逗子市','三浦市'],
-  '15':['新潟市','長岡市','三条市','柏崎市','新発田市','小千谷市','十日町市','見附市','村上市','燕市','糸魚川市'],
-  '16':['富山市','高岡市','魚津市','氷見市','滑川市','黒部市','砺波市','小矢部市','南砺市','射水市'],
-  '17':['金沢市','七尾市','小松市','輪島市','珠洲市','加賀市','羽咋市','かほく市','白山市','能美市'],
-  '18':['福井市','敦賀市','小浜市','大野市','勝山市','鯖江市','あわら市','越前市','坂井市'],
-  '19':['甲府市','富士吉田市','都留市','山梨市','大月市','韮崎市','南アルプス市','北杜市','甲斐市','笛吹市','上野原市','甲州市','中央市'],
-  '20':['長野市','松本市','上田市','岡谷市','飯田市','諏訪市','須坂市','小諸市','伊那市','駒ヶ根市'],
-  '21':['岐阜市','大垣市','高山市','多治見市','関市','中津川市','美濃市','瑞浪市','羽島市','恵那市','美濃加茂市'],
-  '22':['静岡市','浜松市','沼津市','熱海市','三島市','富士宮市','伊東市','島田市','富士市','磐田市','焼津市','掛川市','藤枝市'],
-  '23':['名古屋市','豊橋市','岡崎市','一宮市','瀬戸市','半田市','春日井市','豊川市','津島市','碧南市','刈谷市','豊田市'],
-  '24':['津市','四日市市','伊勢市','松阪市','桑名市','鈴鹿市','名張市','尾鷲市','亀山市','鳥羽市'],
-  '25':['大津市','彦根市','長浜市','近江八幡市','草津市','守山市','栗東市','甲賀市','野洲市','湖南市'],
-  '26':['京都市','福知山市','舞鶴市','綾部市','宇治市','宮津市','亀岡市','城陽市','向日市','長岡京市'],
-  '27':['大阪市','堺市','岸和田市','豊中市','池田市','吹田市','泉大津市','高槻市','貝塚市','守口市'],
-  '28':['神戸市','姫路市','尼崎市','明石市','西宮市','洲本市','芦屋市','伊丹市','相生市','豊岡市'],
-  '29':['奈良市','大和高田市','大和郡山市','天理市','橿原市','桜井市','五條市','御所市','生駒市','香芝市'],
-  '30':['和歌山市','海南市','橋本市','有田市','御坊市','田辺市','新宮市','紀の川市','岩出市'],
-  '31':['鳥取市','米子市','倉吉市','境港市'],
-  '32':['松江市','浜田市','出雲市','益田市','大田市','安来市','江津市','雲南市'],
-  '33':['岡山市','倉敷市','津山市','玉野市','笠岡市','井原市','総社市','高梁市','新見市','備前市'],
-  '34':['広島市','呉市','竹原市','三原市','尾道市','福山市','府中市','三次市','庄原市','大竹市'],
-  '35':['下関市','宇部市','山口市','萩市','防府市','下松市','岩国市','光市','長門市','柳井市'],
-  '36':['徳島市','鳴門市','小松島市','阿南市','吉野川市','阿波市','美馬市','三好市'],
-  '37':['高松市','丸亀市','坂出市','善通寺市','観音寺市','さぬき市','東かがわ市','三豊市'],
-  '38':['松山市','今治市','宇和島市','八幡浜市','新居浜市','西条市','大洲市','伊予市'],
-  '39':['高知市','室戸市','安芸市','南国市','土佐市','須崎市','宿毛市','土佐清水市','四万十市'],
-  '40':['福岡市','北九州市','大牟田市','久留米市'],
-  '41':['佐賀市','唐津市','鳥栖市','多久市','伊万里市'],
-  '42':['長崎市','佐世保市','島原市','諫早市','大村市'],
-  '43':['熊本市','八代市','人吉市','荒尾市','水俣市'],
-  '44':['大分市','別府市','中津市','日田市','佐伯市'],
-  '45':['宮崎市','都城市','延岡市','日南市','小林市'],
-  '46':['鹿児島市','鹿屋市','枕崎市','阿久根市','出水市'],
-  '47':['那覇市','宜野湾市','石垣市','浦添市','名護市']
-};
+  <div class="map-wrap" id="mapWrap">
+    <div id="loading" class="loading">地図を読み込み中...</div>
+    <svg id="mapSvg" viewBox="0 0 850 680"></svg>
+  </div>
 
-const PREFS_LIST=Object.entries(PREF_MAP).map(([id,name])=>({id,name}));
-const UNVISITED_COLOR='#d0d0c8';
+  <div class="legend-row" id="legendRow" aria-label="凡例"></div>
 
-const PALETTE_BASE_INPUT=[
-  '#30cb88','#958078','#f35f8c','#fa7f78','#fdc02c','#b38bdd','#46b2f7','#3dc1c9'
-];
+  <div class="overlay hidden" id="overlay" onclick="handleOverlayClick(event)">
+    <div class="sheet" id="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-inner" id="sheetContent"></div>
+    </div>
+  </div>
 
-function hexToRgb(hex){
-  const h=String(hex||'').replace('#','').trim();
-  if(h.length!==6) return null;
-  const n=parseInt(h,16);
-  return {r:(n>>16)&255,g:(n>>8)&255,b:n&255};
-}
-function rgbToHsv(r,g,b){
-  const rn=r/255, gn=g/255, bn=b/255;
-  const max=Math.max(rn,gn,bn);
-  const min=Math.min(rn,gn,bn);
-  const d=max-min;
-  let h=0;
-  if(d===0) h=0;
-  else if(max===rn) h=((gn-bn)/d)%6;
-  else if(max===gn) h=((bn-rn)/d)+2;
-  else h=((rn-gn)/d)+4;
-  h*=60;
-  if(h<0) h+=360;
-  const s=max===0?0:d/max;
-  const v=max;
-  return {h,s,v};
-}
-function buildRainbowPalette(){
-  const items=PALETTE_BASE_INPUT.map(hex=>{
-    const rgb=hexToRgb(hex);
-    const hsv=rgbToHsv(rgb.r,rgb.g,rgb.b);
-    return {hex,hsv};
-  }).sort((a,b)=>a.hsv.h-b.hsv.h);
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js" crossorigin="anonymous"></script>
+  <script>
+    const PREF_MAP = {
+      '01': '北海道', '02': '青森', '03': '岩手', '04': '宮城', '05': '秋田',
+      '06': '山形', '07': '福島', '08': '茨城', '09': '栃木', '10': '群馬',
+      '11': '埼玉', '12': '千葉', '13': '東京', '14': '神奈川', '15': '新潟',
+      '16': '富山', '17': '石川', '18': '福井', '19': '山梨', '20': '長野',
+      '21': '岐阜', '22': '静岡', '23': '愛知', '24': '三重', '25': '滋賀',
+      '26': '京都', '27': '大阪', '28': '兵庫', '29': '奈良', '30': '和歌山',
+      '31': '鳥取', '32': '島根', '33': '岡山', '34': '広島', '35': '山口',
+      '36': '徳島', '37': '香川', '38': '愛媛', '39': '高知', '40': '福岡',
+      '41': '佐賀', '42': '長崎', '43': '熊本', '44': '大分', '45': '宮崎',
+      '46': '鹿児島', '47': '沖縄'
+    };
+    const REGION_MAP = {
+      '01': '北海道', '02': '東北', '03': '東北', '04': '東北', '05': '東北', '06': '東北', '07': '東北',
+      '08': '関東', '09': '関東', '10': '関東', '11': '関東', '12': '関東', '13': '関東', '14': '関東',
+      '15': '中部', '16': '中部', '17': '中部', '18': '中部', '19': '中部', '20': '中部', '21': '中部', '22': '中部', '23': '中部',
+      '24': '近畿', '25': '近畿', '26': '近畿', '27': '近畿', '28': '近畿', '29': '近畿', '30': '近畿',
+      '31': '中国', '32': '中国', '33': '中国', '34': '中国', '35': '中国',
+      '36': '四国', '37': '四国', '38': '四国', '39': '四国',
+      '40': '九州', '41': '九州', '42': '九州', '43': '九州', '44': '九州', '45': '九州', '46': '九州', '47': '九州'
+    };
+    const CITIES = {
+      '01': ['札幌市', '函館市', '旭川市', '釧路市', '帯広市', '北見市', '小樽市', '苫小牧市', '室蘭市', '江別市'],
+      '02': ['青森市', '弘前市', '八戸市', '黒石市', '五所川原市', '十和田市', '三沢市', 'むつ市'],
+      '03': ['盛岡市', '宮古市', '大船渡市', '花巻市', '北上市', '久慈市', '遠野市', '一関市', '釜石市', '奥州市'],
+      '04': ['仙台市', '石巻市', '塩竈市', '気仙沼市', '白石市', '名取市', '多賀城市', '岩沼市', '登米市', '栗原市'],
+      '05': ['秋田市', '能代市', '横手市', '大館市', '男鹿市', '湯沢市', '鹿角市', '由利本荘市', '大仙市', '北秋田市'],
+      '06': ['山形市', '米沢市', '鶴岡市', '酒田市', '新庄市', '寒河江市', '上山市', '村山市', '長井市', '天童市'],
+      '07': ['福島市', '会津若松市', '郡山市', 'いわき市', '白河市', '須賀川市', '喜多方市', '相馬市', '南相馬市', '二本松市'],
+      '08': ['水戸市', '日立市', '土浦市', '古河市', '石岡市', '結城市', '龍ヶ崎市', '下妻市', '常総市', '常陸太田市', 'つくば市', 'ひたちなか市'],
+      '09': ['宇都宮市', '足利市', '栃木市', '佐野市', '鹿沼市', '日光市', '小山市', '真岡市', '大田原市', '矢板市', '那須塩原市'],
+      '10': ['前橋市', '高崎市', '桐生市', '伊勢崎市', '太田市', '沼田市', '館林市', '渋川市', '藤岡市', '富岡市'],
+      '11': ['さいたま市', '川越市', '熊谷市', '川口市', '行田市', '秩父市', '所沢市', '飯能市', '加須市', '本庄市', '春日部市', '狭山市', '鴻巣市', '深谷市', '上尾市', '草加市', '越谷市', '蕨市', '朝霞市', '志木市', '和光市', '新座市', '桶川市', '久喜市'],
+      '12': ['千葉市', '銚子市', '市川市', '船橋市', '館山市', '木更津市', '松戸市', '野田市', '茂原市', '成田市', '佐倉市', '東金市', '旭市', '習志野市', '柏市', '勝浦市', '市原市', '流山市', '八千代市', '我孫子市', '鴨川市', '鎌ヶ谷市', '君津市', '富津市', '浦安市'],
+      '13': ['千代田区', '中央区', '港区', '新宿区', '文京区', '台東区', '墨田区', '江東区', '品川区', '目黒区', '大田区', '世田谷区', '渋谷区', '中野区', '杉並区', '豊島区', '北区', '荒川区', '板橋区', '練馬区', '足立区', '葛飾区', '江戸川区'],
+      '14': ['横浜市', '川崎市', '相模原市', '横須賀市', '平塚市', '鎌倉市', '藤沢市', '小田原市', '茅ヶ崎市', '逗子市', '三浦市'],
+      '15': ['新潟市', '長岡市', '三条市', '柏崎市', '新発田市', '小千谷市', '十日町市', '見附市', '村上市', '燕市', '糸魚川市'],
+      '16': ['富山市', '高岡市', '魚津市', '氷見市', '滑川市', '黒部市', '砺波市', '小矢部市', '南砺市', '射水市'],
+      '17': ['金沢市', '七尾市', '小松市', '輪島市', '珠洲市', '加賀市', '羽咋市', 'かほく市', '白山市', '能美市'],
+      '18': ['福井市', '敦賀市', '小浜市', '大野市', '勝山市', '鯖江市', 'あわら市', '越前市', '坂井市'],
+      '19': ['甲府市', '富士吉田市', '都留市', '山梨市', '大月市', '韮崎市', '南アルプス市', '北杜市', '甲斐市', '笛吹市', '上野原市', '甲州市', '中央市'],
+      '20': ['長野市', '松本市', '上田市', '岡谷市', '飯田市', '諏訪市', '須坂市', '小諸市', '伊那市', '駒ヶ根市'],
+      '21': ['岐阜市', '大垣市', '高山市', '多治見市', '関市', '中津川市', '美濃市', '瑞浪市', '羽島市', '恵那市', '美濃加茂市'],
+      '22': ['静岡市', '浜松市', '沼津市', '熱海市', '三島市', '富士宮市', '伊東市', '島田市', '富士市', '磐田市', '焼津市', '掛川市', '藤枝市'],
+      '23': ['名古屋市', '豊橋市', '岡崎市', '一宮市', '瀬戸市', '半田市', '春日井市', '豊川市', '津島市', '碧南市', '刈谷市', '豊田市'],
+      '24': ['津市', '四日市市', '伊勢市', '松阪市', '桑名市', '鈴鹿市', '名張市', '尾鷲市', '亀山市', '鳥羽市'],
+      '25': ['大津市', '彦根市', '長浜市', '近江八幡市', '草津市', '守山市', '栗東市', '甲賀市', '野洲市', '湖南市'],
+      '26': ['京都市', '福知山市', '舞鶴市', '綾部市', '宇治市', '宮津市', '亀岡市', '城陽市', '向日市', '長岡京市'],
+      '27': ['大阪市', '堺市', '岸和田市', '豊中市', '池田市', '吹田市', '泉大津市', '高槻市', '貝塚市', '守口市'],
+      '28': ['神戸市', '姫路市', '尼崎市', '明石市', '西宮市', '洲本市', '芦屋市', '伊丹市', '相生市', '豊岡市'],
+      '29': ['奈良市', '大和高田市', '大和郡山市', '天理市', '橿原市', '桜井市', '五條市', '御所市', '生駒市', '香芝市'],
+      '30': ['和歌山市', '海南市', '橋本市', '有田市', '御坊市', '田辺市', '新宮市', '紀の川市', '岩出市'],
+      '31': ['鳥取市', '米子市', '倉吉市', '境港市'],
+      '32': ['松江市', '浜田市', '出雲市', '益田市', '大田市', '安来市', '江津市', '雲南市'],
+      '33': ['岡山市', '倉敷市', '津山市', '玉野市', '笠岡市', '井原市', '総社市', '高梁市', '新見市', '備前市'],
+      '34': ['広島市', '呉市', '竹原市', '三原市', '尾道市', '福山市', '府中市', '三次市', '庄原市', '大竹市'],
+      '35': ['下関市', '宇部市', '山口市', '萩市', '防府市', '下松市', '岩国市', '光市', '長門市', '柳井市'],
+      '36': ['徳島市', '鳴門市', '小松島市', '阿南市', '吉野川市', '阿波市', '美馬市', '三好市'],
+      '37': ['高松市', '丸亀市', '坂出市', '善通寺市', '観音寺市', 'さぬき市', '東かがわ市', '三豊市'],
+      '38': ['松山市', '今治市', '宇和島市', '八幡浜市', '新居浜市', '西条市', '大洲市', '伊予市'],
+      '39': ['高知市', '室戸市', '安芸市', '南国市', '土佐市', '須崎市', '宿毛市', '土佐清水市', '四万十市'],
+      '40': ['福岡市', '北九州市', '大牟田市', '久留米市'],
+      '41': ['佐賀市', '唐津市', '鳥栖市', '多久市', '伊万里市'],
+      '42': ['長崎市', '佐世保市', '島原市', '諫早市', '大村市'],
+      '43': ['熊本市', '八代市', '人吉市', '荒尾市', '水俣市'],
+      '44': ['大分市', '別府市', '中津市', '日田市', '佐伯市'],
+      '45': ['宮崎市', '都城市', '延岡市', '日南市', '小林市'],
+      '46': ['鹿児島市', '鹿屋市', '枕崎市', '阿久根市', '出水市'],
+      '47': ['那覇市', '宜野湾市', '石垣市', '浦添市', '名護市']
+    };
 
-  const redTarget=0;
-  let bestIdx=0;
-  let bestDist=Infinity;
-  for(let i=0;i<items.length;i++){
-    const dist=Math.min(Math.abs(items[i].hsv.h-redTarget), 360-Math.abs(items[i].hsv.h-redTarget));
-    if(dist<bestDist){bestDist=dist;bestIdx=i;}
-  }
-  const rotated=[...items.slice(bestIdx),...items.slice(0,bestIdx)];
-  return rotated.map(x=>x.hex.toLowerCase());
-}
-const RAINBOW_PALETTE_HEX=buildRainbowPalette();
-const PALETTE_SET=new Set(RAINBOW_PALETTE_HEX.map(x=>x.toLowerCase()));
+    const PREFS_LIST = Object.entries(PREF_MAP).map(([id, name]) => ({ id, name }));
+    const UNVISITED_COLOR = '#d0d0c8';
 
-function escapeHtml(s){
-  return (s||'').replace(/[&<>"']/g,c=>{
-    const m={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
-    return m[c];
-  });
-}
+    const PALETTE_BASE_INPUT = [
+      '#30cb88', '#958078', '#f35f8c', '#fa7f78', '#fdc02c', '#b38bdd', '#46b2f7', '#3dc1c9'
+    ];
 
-function normalizeHex(hex){
-  const c=String(hex||'').trim().toLowerCase();
-  if(PALETTE_SET.has(c)) return c;
-  return null;
-}
-
-let state={
-  hometown:null,
-  residences:[],
-  visited:{},
-  theme:{
-    hometownColor:null,
-    residenceColor:null,
-    visitedDefaultColor:null,
-    visitedByColor:{}
-  }
-};
-
-let allPaths={};
-let settingsTab=0;
-
-let pendingHt=null;
-let pendingRes=[];
-let pendingTheme=null;
-
-let visitedLabelDraftByColor={};
-let visitedLabelDraftDirty=false;
-
-let pendingPrefDirty=false; // 出身/居住タブ(0,1)の県選択下書きがあるか
-
-function loadState(){
-  try{
-    const s=localStorage.getItem('jptr5');
-    if(s){
-      const parsed=JSON.parse(s);
-      if(parsed) state=parsed;
+    function hexToRgb(hex) {
+      const h = String(hex || '').replace('#', '').trim();
+      if (h.length !== 6) return null;
+      const n = parseInt(h, 16);
+      return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
     }
-  }catch(e){}
-  if(!Array.isArray(state.residences)) state.residences=[];
-  if(!state.visited || typeof state.visited!=='object') state.visited={};
-  if(!state.theme) state.theme={};
-  if(!('visitedByColor' in state.theme) || !state.theme.visitedByColor) state.theme.visitedByColor={};
-}
-
-function saveState(){
-  try{ localStorage.setItem('jptr5', JSON.stringify(state)); }catch(e){}
-}
-
-function getStatus(code){
-  const isHt=state.hometown===code;
-  const isRes=(state.residences||[]).includes(code);
-  if(isHt && isRes) return 'both';
-  if(isHt) return 'hometown';
-  if(isRes) return 'residence';
-  if(state.visited && state.visited[code]) return 'visited';
-  return 'none';
-}
-
-function visitedMeta(hexLower){
-  const k=normalizeHex(hexLower);
-  if(!k) return {};
-  return state.theme.visitedByColor?.[k] || {};
-}
-function isVisitedColorVisible(hexLower){
-  const k=normalizeHex(hexLower);
-  if(!k) return false;
-  const v=visitedMeta(k).visible;
-  return v===false ? false : true;
-}
-function getVisitedLabelForColor(hexLower){
-  const k=normalizeHex(hexLower);
-  if(!k) return '未設定';
-  const meta=state.theme.visitedByColor?.[k] || {};
-  const draft=visitedLabelDraftByColor?.[k];
-  const label=(draft!==undefined) ? draft : meta.label;
-
-  if(label && String(label).trim().length>0) return String(label).trim();
-  return '未設定';
-}
-
-function getColor(code){
-  const s=getStatus(code);
-  const residenceSettingsMode = settingsTab === 1; // 画面上のタブ状態
-
-  if(s==='hometown'){
-    if(residenceSettingsMode) return UNVISITED_COLOR;
-    return normalizeHex(state.theme.hometownColor) || UNVISITED_COLOR;
-  }
-
-  if(s==='both'){
-    if(residenceSettingsMode){
-      return normalizeHex(state.theme.residenceColor) || UNVISITED_COLOR;
+    function rgbToHsv(r, g, b) {
+      const rn = r / 255, gn = g / 255, bn = b / 255;
+      const max = Math.max(rn, gn, bn);
+      const min = Math.min(rn, gn, bn);
+      const d = max - min;
+      let h = 0;
+      if (d === 0) h = 0;
+      else if (max === rn) h = ((gn - bn) / d) % 6;
+      else if (max === gn) h = ((bn - rn) / d) + 2;
+      else h = ((rn - gn) / d) + 4;
+      h *= 60;
+      if (h < 0) h += 360;
+      const s = max === 0 ? 0 : d / max;
+      const v = max;
+      return { h, s, v };
     }
-    return normalizeHex(state.theme.hometownColor) || UNVISITED_COLOR;
-  }
+    function buildRainbowPalette() {
+      const items = PALETTE_BASE_INPUT.map(hex => {
+        const rgb = hexToRgb(hex);
+        const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
+        return { hex, hsv };
+      }).sort((a, b) => a.hsv.h - b.hsv.h);
 
-  if(s==='residence') return normalizeHex(state.theme.residenceColor) || UNVISITED_COLOR;
-
-  if(s==='visited'){
-    const c=normalizeHex(state.visited[code]?.color);
-    if(!c) return normalizeHex(state.theme.visitedDefaultColor) || UNVISITED_COLOR;
-    if(!isVisitedColorVisible(c)) return UNVISITED_COLOR;
-    return c || normalizeHex(state.theme.visitedDefaultColor) || UNVISITED_COLOR;
-  }
-
-  return UNVISITED_COLOR;
-}
-
-function isThemeReadyForRecording(){
-  return !!normalizeHex(state.theme.hometownColor)
-}
-
-function updateLegend(){
-  const legendRow=document.getElementById('legendRow');
-  if(!legendRow) return;
-
-  const htColor=normalizeHex(state.theme.hometownColor) || UNVISITED_COLOR;
-  const resColor=normalizeHex(state.theme.residenceColor) || UNVISITED_COLOR;
-
-  const used=new Set();
-  Object.values(state.visited||{}).forEach(v=>{
-    const c=normalizeHex(v?.color);
-    if(c) used.add(c);
-  });
-
-  const ordered=RAINBOW_PALETTE_HEX.filter(hex=>{
-    if(!used.has(hex)) return false;
-    return isVisitedColorVisible(hex);
-  });
-
-  const htLine=`<div class="leg"><div class="leg-dot" style="background:${htColor}"></div><span>出身地</span></div>`;
-  const resLine=`<div class="leg"><div class="leg-dot" style="background:${resColor}"></div><span>居住地 / 勤務地</span></div>`;
-
-  let visitedLines='';
-  ordered.forEach(hex=>{
-    visitedLines += `<div class="leg"><div class="leg-dot" style="background:${hex}"></div><span>${escapeHtml(getVisitedLabelForColor(hex))}</span></div>`;
-  });
-
-  const unvisitedLine=`<div class="leg"><div class="leg-dot" style="background:${UNVISITED_COLOR}"></div><span>未訪問</span></div>`;
-  legendRow.innerHTML=[htLine,resLine,visitedLines,unvisitedLine].join('');
-}
-
-function updateUI(){
-  const visitedSet=new Set([...Object.keys(state.visited||{}),state.hometown,...(state.residences||[])].filter(Boolean));
-  document.getElementById('cnt').textContent=visitedSet.size;
-  document.getElementById('progressFill').style.width=Math.round(visitedSet.size/47*100)+'%';
-
-  Object.entries(allPaths).forEach(([code,el])=>{
-    el.setAttribute('fill', getColor(code));
-  });
-
-  updateLegend();
-}
-
-function getPrefSuffix(code){
-  if(code==='01')return '道';
-  if(code==='13')return '都';
-  if(code==='26'||code==='27')return '府';
-  return '県';
-}
-
-function initMap(japan){
-  const svg=d3.select('#mapSvg');
-  const path=d3.geoPath();
-  const features=topojson.feature(japan,japan.objects.prefectures).features;
-
-  features.forEach(f=>{
-    const code=String(f.id).substring(0,2).padStart(2,'0');
-    const name=PREF_MAP[code]||code;
-    const el=svg.append('path')
-      .attr('d',path(f))
-      .attr('fill',getColor(code))
-      .attr('stroke','#f5f5f0')
-      .attr('stroke-width',0.7)
-      .style('cursor','pointer')
-      .node();
-    allPaths[code]=el;
-    el.addEventListener('click',()=>openPref(code,name));
-  });
-
-  document.getElementById('loading').style.display='none';
-  document.getElementById('mapSvg').style.display='block';
-  initPinchZoom();
-}
-
-function initPinchZoom(){
-  const wrap=document.getElementById('mapWrap');
-  const svg=document.getElementById('mapSvg');
-
-  let scale=1,tx=0,ty=0;
-  let startDist=0,startScale=1,startTx=0,startTy=0;
-  let startMid={x:0,y:0};
-  let isDragging=false,lastX=0,lastY=0;
-
-  function applyTransform(){
-    const W=wrap.clientWidth,H=wrap.clientHeight;
-    const minTx=Math.min(0,W-W*scale);
-    const minTy=Math.min(0,H-H*scale);
-    tx=Math.max(minTx,Math.min(0,tx));
-    ty=Math.max(minTy,Math.min(0,ty));
-    svg.style.transform=`translate(${tx}px,${ty}px) scale(${scale})`;
-  }
-
-  function dist(t){return Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY)}
-  function mid(t){return{x:(t[0].clientX+t[1].clientX)/2,y:(t[0].clientY+t[1].clientY)/2}}
-
-  wrap.addEventListener('touchstart',e=>{
-    if(e.touches.length===2){
-      e.preventDefault();
-      startDist=dist(e.touches);startScale=scale;
-      startMid=mid(e.touches);startTx=tx;startTy=ty;
-    } else if(e.touches.length===1 && scale>1){
-      isDragging=true;lastX=e.touches[0].clientX;lastY=e.touches[0].clientY;
+      const redTarget = 0;
+      let bestIdx = 0;
+      let bestDist = Infinity;
+      for (let i = 0; i < items.length; i++) {
+        const dist = Math.min(Math.abs(items[i].hsv.h - redTarget), 360 - Math.abs(items[i].hsv.h - redTarget));
+        if (dist < bestDist) { bestDist = dist; bestIdx = i; }
+      }
+      const rotated = [...items.slice(bestIdx), ...items.slice(0, bestIdx)];
+      return rotated.map(x => x.hex.toLowerCase());
     }
-  },{passive:false});
+    const RAINBOW_PALETTE_HEX = buildRainbowPalette();
+    const PALETTE_SET = new Set(RAINBOW_PALETTE_HEX.map(x => x.toLowerCase()));
 
-  wrap.addEventListener('touchmove',e=>{
-    if(e.touches.length===2){
-      e.preventDefault();
-      const newDist=dist(e.touches);
-      const newScale=Math.min(5,Math.max(1,startScale*newDist/startDist));
-      const m=mid(e.touches);
-      const ratio=newScale/startScale;
-      tx=m.x-(startMid.x-startTx)*ratio;
-      ty=m.y-(startMid.y-startTy)*ratio;
-      scale=newScale;applyTransform();
-    } else if(e.touches.length===1 && isDragging){
-      e.preventDefault();
-      tx+=e.touches[0].clientX-lastX;
-      ty+=e.touches[0].clientY-lastY;
-      lastX=e.touches[0].clientX;lastY=e.touches[0].clientY;
-      applyTransform();
+    function escapeHtml(s) {
+      return (s || '').replace(/[&<>"']/g, c => {
+        const m = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+        return m[c];
+      });
     }
-  },{passive:false});
 
-  wrap.addEventListener('touchend',()=>{
-    if(scale<1.05){scale=1;tx=0;ty=0;applyTransform();}
-    isDragging=false;
-  });
-}
-
-function showSheet(html){
-  document.getElementById('sheetContent').innerHTML=html;
-  document.getElementById('overlay').classList.remove('hidden');
-  setTimeout(()=>{
-    renderChipsIfNeeded();
-    renderVisitColorPaletteIfNeeded();
-    renderThemeColorPaletteIfNeeded();
-    renderSettingsSheetIfNeeded();
-  },60);
-}
-
-function renderSettingsSheetIfNeeded(){
-  // settingsTab に応じて描画は renderSettingsSheet() が担う
-}
-
-function closeSheet(){
-  commitPendingSelectionsIfDirty();
-  commitVisitedLabelDraftIfDirty();
-  document.getElementById('overlay').classList.add('hidden');
-}
-
-function handleOverlayClick(e){
-  if(e.target===document.getElementById('overlay')) closeSheet();
-}
-
-document.addEventListener('click',e=>{
-  if(!e.target || !(e.target instanceof Element)) return;
-  const overlay=document.getElementById('overlay');
-  const sheet=document.getElementById('sheet');
-  const isOverlayOpen=overlay && !overlay.classList.contains('hidden');
-  const insideSheet=sheet ? sheet.contains(e.target) : false;
-
-  const cityWrap=e.target.closest('.city-input-wrap');
-  const chipAdd=e.target.closest('.chip-add-btn');
-  const paletteVisit=e.target.closest('#visitColorPalette');
-  const paletteTheme=e.target.closest('#themeColorPalette');
-  const visitedSettingsRow=e.target.closest('.visited-row');
-
-  if(isOverlayOpen && !insideSheet) return;
-  if(cityWrap || chipAdd || paletteVisit || paletteTheme || visitedSettingsRow) return;
-
-  const list=document.getElementById('suggestList');
-  const wrap=document.getElementById('cityInputWrap');
-  if(wrap && wrap.style.display!=='none'){
-    const inp=document.getElementById('cityInput');
-    if(inp && inp.value.trim()===''){ closeCityInput(); return; }
-  }
-  if(list) list.style.display='none';
-});
-
-function commitPendingSelectionsIfDirty(){
-  if(!pendingPrefDirty) return;
-  state.hometown=pendingHt;
-  state.residences=(pendingRes||[]).filter(x=>x!==state.hometown);
-  pendingPrefDirty=false;
-  saveState();
-  updateUI();
-}
-
-function commitVisitedLabelDraftIfDirty(){
-  if(!visitedLabelDraftDirty) return;
-  state.theme.visitedByColor=state.theme.visitedByColor || {};
-  Object.entries(visitedLabelDraftByColor).forEach(([hexLower,label])=>{
-    const h=normalizeHex(hexLower);
-    if(!h) return;
-    state.theme.visitedByColor[h]=state.theme.visitedByColor[h] || {};
-    state.theme.visitedByColor[h].label=String(label||'');
-  });
-  visitedLabelDraftByColor={};
-  visitedLabelDraftDirty=false;
-  saveState();
-  updateUI();
-}
-
-function openPref(code,name){
-  const status=getStatus(code);
-  const suffix=getPrefSuffix(code);
-  const region=REGION_MAP[code]||'';
-
-  let pill='';
-  if(status==='hometown'||status==='both') pill=`<span class="status-pill pill-hometown">出身地</span>`;
-  else if(status==='residence') pill=`<span class="status-pill pill-residence">居住地 / 勤務地</span>`;
-  else if(status==='visited') pill=`<span class="status-pill pill-visited">訪問済み</span>`;
-  else pill=`<span class="status-pill pill-none">未訪問</span>`;
-
-  let body='';
-  if(status==='hometown'||status==='residence'||status==='both'){
-    body=`<div class="btn-group"><button class="btn btn-ghost" onclick="closeSheet()">閉じる</button></div>`;
-  } else if(status==='visited' && state.visited[code]){
-    const v=state.visited[code];
-    const dotColor=normalizeHex(v.color) || normalizeHex(state.theme.visitedDefaultColor) || UNVISITED_COLOR;
-    const shownColor=isVisitedColorVisible(dotColor) ? dotColor : UNVISITED_COLOR;
-    const label=shownColor===UNVISITED_COLOR ? '未訪問' : getVisitedLabelForColor(dotColor);
-
-    let rows='';
-    rows+=`<div class="detail-row"><span class="detail-key">マップの色</span><span class="detail-val"><span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${shownColor};vertical-align:middle"></span>&nbsp;${escapeHtml(label)}</span></div>`;
-    if(v.startDate||v.endDate){
-      const l=v.startDate===v.endDate||!v.endDate?v.startDate:(v.startDate+' 〜 '+v.endDate);
-      rows+=`<div class="detail-row"><span class="detail-key">滞在期間</span><span class="detail-val">${escapeHtml(l)}</span></div>`;
+    function normalizeHex(hex) {
+      const c = String(hex || '').trim().toLowerCase();
+      if (PALETTE_SET.has(c)) return c;
+      return null;
     }
-    if(v.cities&&v.cities.length) rows+=`<div class="detail-row"><span class="detail-key">訪問した市</span><span class="detail-val">${escapeHtml(v.cities.join('、'))}</span></div>`;
-    if(v.memo) rows+=`<div class="detail-row"><span class="detail-key">メモ</span><span class="detail-val">${escapeHtml(v.memo)}</span></div>`;
 
-    body=`<div class="visit-detail">${rows}</div>
+    let state = {
+      hometown: null,
+      residences: [],
+      visited: {},
+      theme: {
+        hometownColor: null,
+        residenceColor: null,
+        visitedDefaultColor: null,
+        visitedByColor: {}
+      }
+    };
+
+    let allPaths = {};
+    let settingsTab = 0;
+
+    let pendingHt = null;
+    let pendingRes = [];
+    let pendingTheme = null;
+
+    let visitedLabelDraftByColor = {};
+    let visitedLabelDraftDirty = false;
+
+    let pendingPrefDirty = false; // 出身/居住タブ(0,1)の県選択下書きがあるか
+
+    function loadState() {
+      try {
+        const s = localStorage.getItem('jptr5');
+        if (s) {
+          const parsed = JSON.parse(s);
+          if (parsed) state = parsed;
+        }
+      } catch (e) { }
+      if (!Array.isArray(state.residences)) state.residences = [];
+      if (!state.visited || typeof state.visited !== 'object') state.visited = {};
+      if (!state.theme) state.theme = {};
+      if (!('visitedByColor' in state.theme) || !state.theme.visitedByColor) state.theme.visitedByColor = {};
+    }
+
+    function saveState() {
+      try { localStorage.setItem('jptr5', JSON.stringify(state)); } catch (e) { }
+    }
+
+    function getStatus(code) {
+      const isHt = state.hometown === code;
+      const isRes = (state.residences || []).includes(code);
+      if (isHt && isRes) return 'both';
+      if (isHt) return 'hometown';
+      if (isRes) return 'residence';
+      if (state.visited && state.visited[code]) return 'visited';
+      return 'none';
+    }
+
+    function visitedMeta(hexLower) {
+      const k = normalizeHex(hexLower);
+      if (!k) return {};
+      return state.theme.visitedByColor?.[k] || {};
+    }
+    function isVisitedColorVisible(hexLower) {
+      const k = normalizeHex(hexLower);
+      if (!k) return false;
+      const v = visitedMeta(k).visible;
+      return v === false ? false : true;
+    }
+    function getVisitedLabelForColor(hexLower) {
+      const k = normalizeHex(hexLower);
+      if (!k) return '未設定';
+      const meta = state.theme.visitedByColor?.[k] || {};
+      const draft = visitedLabelDraftByColor?.[k];
+      const label = (draft !== undefined) ? draft : meta.label;
+
+      if (label && String(label).trim().length > 0) return String(label).trim();
+      return '未設定';
+    }
+
+    function getColor(code) {
+      const s = getStatus(code);
+      const residenceSettingsMode = settingsTab === 1; // 画面上のタブ状態
+
+      if (s === 'hometown') {
+        if (residenceSettingsMode) return UNVISITED_COLOR;
+        return normalizeHex(state.theme.hometownColor) || UNVISITED_COLOR;
+      }
+
+      if (s === 'both') {
+        if (residenceSettingsMode) {
+          return normalizeHex(state.theme.residenceColor) || UNVISITED_COLOR;
+        }
+        return normalizeHex(state.theme.hometownColor) || UNVISITED_COLOR;
+      }
+
+      if (s === 'residence') return normalizeHex(state.theme.residenceColor) || UNVISITED_COLOR;
+
+      if (s === 'visited') {
+        const c = normalizeHex(state.visited[code]?.color);
+        if (!c) return normalizeHex(state.theme.visitedDefaultColor) || UNVISITED_COLOR;
+        if (!isVisitedColorVisible(c)) return UNVISITED_COLOR;
+        return c || normalizeHex(state.theme.visitedDefaultColor) || UNVISITED_COLOR;
+      }
+
+      return UNVISITED_COLOR;
+    }
+
+    function isThemeReadyForRecording() {
+      return !!normalizeHex(state.theme.hometownColor)
+    }
+
+    function updateLegend() {
+      const legendRow = document.getElementById('legendRow');
+      if (!legendRow) return;
+
+      const htColor = normalizeHex(state.theme.hometownColor) || UNVISITED_COLOR;
+      const resColor = normalizeHex(state.theme.residenceColor) || UNVISITED_COLOR;
+
+      const used = new Set();
+      Object.values(state.visited || {}).forEach(v => {
+        const c = normalizeHex(v?.color);
+        if (c) used.add(c);
+      });
+
+      const ordered = RAINBOW_PALETTE_HEX.filter(hex => {
+        if (!used.has(hex)) return false;
+        return isVisitedColorVisible(hex);
+      });
+
+      const htLine = `<div class="leg"><div class="leg-dot" style="background:${htColor}"></div><span>出身地</span></div>`;
+      const resLine = `<div class="leg"><div class="leg-dot" style="background:${resColor}"></div><span>居住地 / 勤務地</span></div>`;
+
+      let visitedLines = '';
+      ordered.forEach(hex => {
+        visitedLines += `<div class="leg"><div class="leg-dot" style="background:${hex}"></div><span>${escapeHtml(getVisitedLabelForColor(hex))}</span></div>`;
+      });
+
+      const unvisitedLine = `<div class="leg"><div class="leg-dot" style="background:${UNVISITED_COLOR}"></div><span>未訪問</span></div>`;
+      legendRow.innerHTML = [htLine, resLine, visitedLines, unvisitedLine].join('');
+    }
+
+    function updateUI() {
+      const visitedSet = new Set([...Object.keys(state.visited || {}), state.hometown, ...(state.residences || [])].filter(Boolean));
+      document.getElementById('cnt').textContent = visitedSet.size;
+      document.getElementById('progressFill').style.width = Math.round(visitedSet.size / 47 * 100) + '%';
+
+      Object.entries(allPaths).forEach(([code, el]) => {
+        el.setAttribute('fill', getColor(code));
+      });
+
+      updateLegend();
+    }
+
+    function getPrefSuffix(code) {
+      if (code === '01') return '道';
+      if (code === '13') return '都';
+      if (code === '26' || code === '27') return '府';
+      return '県';
+    }
+
+    function initMap(japan) {
+      const svg = d3.select('#mapSvg');
+      const path = d3.geoPath();
+      const features = topojson.feature(japan, japan.objects.prefectures).features;
+
+      features.forEach(f => {
+        const code = String(f.id).substring(0, 2).padStart(2, '0');
+        const name = PREF_MAP[code] || code;
+        const el = svg.append('path')
+          .attr('d', path(f))
+          .attr('fill', getColor(code))
+          .attr('stroke', '#f5f5f0')
+          .attr('stroke-width', 0.7)
+          .style('cursor', 'pointer')
+          .node();
+        allPaths[code] = el;
+        el.addEventListener('click', () => openPref(code, name));
+      });
+
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('mapSvg').style.display = 'block';
+      initPinchZoom();
+    }
+
+    function initPinchZoom() {
+      const wrap = document.getElementById('mapWrap');
+      const svg = document.getElementById('mapSvg');
+
+      let scale = 1, tx = 0, ty = 0;
+      let startDist = 0, startScale = 1, startTx = 0, startTy = 0;
+      let startMid = { x: 0, y: 0 };
+      let isDragging = false, lastX = 0, lastY = 0;
+
+      function applyTransform() {
+        const W = wrap.clientWidth, H = wrap.clientHeight;
+        const minTx = Math.min(0, W - W * scale);
+        const minTy = Math.min(0, H - H * scale);
+        tx = Math.max(minTx, Math.min(0, tx));
+        ty = Math.max(minTy, Math.min(0, ty));
+        svg.style.transform = `translate(${tx}px,${ty}px) scale(${scale})`;
+      }
+
+      function dist(t) { return Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY) }
+      function mid(t) { return { x: (t[0].clientX + t[1].clientX) / 2, y: (t[0].clientY + t[1].clientY) / 2 } }
+
+      wrap.addEventListener('touchstart', e => {
+        if (e.touches.length === 2) {
+          e.preventDefault();
+          startDist = dist(e.touches); startScale = scale;
+          startMid = mid(e.touches); startTx = tx; startTy = ty;
+        } else if (e.touches.length === 1 && scale > 1) {
+          isDragging = true; lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
+        }
+      }, { passive: false });
+
+      wrap.addEventListener('touchmove', e => {
+        if (e.touches.length === 2) {
+          e.preventDefault();
+          const newDist = dist(e.touches);
+          const newScale = Math.min(5, Math.max(1, startScale * newDist / startDist));
+          const m = mid(e.touches);
+          const ratio = newScale / startScale;
+          tx = m.x - (startMid.x - startTx) * ratio;
+          ty = m.y - (startMid.y - startTy) * ratio;
+          scale = newScale; applyTransform();
+        } else if (e.touches.length === 1 && isDragging) {
+          e.preventDefault();
+          tx += e.touches[0].clientX - lastX;
+          ty += e.touches[0].clientY - lastY;
+          lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
+          applyTransform();
+        }
+      }, { passive: false });
+
+      wrap.addEventListener('touchend', () => {
+        if (scale < 1.05) { scale = 1; tx = 0; ty = 0; applyTransform(); }
+        isDragging = false;
+      });
+    }
+
+    function showSheet(html) {
+      document.getElementById('sheetContent').innerHTML = html;
+      document.getElementById('overlay').classList.remove('hidden');
+      setTimeout(() => {
+        renderChipsIfNeeded();
+        renderVisitColorPaletteIfNeeded();
+        renderThemeColorPaletteIfNeeded();
+        renderSettingsSheetIfNeeded();
+      }, 60);
+    }
+
+    function renderSettingsSheetIfNeeded() {
+      // settingsTab に応じて描画は renderSettingsSheet() が担う
+    }
+
+    function closeSheet() {
+      commitPendingSelectionsIfDirty();
+      commitVisitedLabelDraftIfDirty();
+      document.getElementById('overlay').classList.add('hidden');
+    }
+
+    function handleOverlayClick(e) {
+      if (e.target === document.getElementById('overlay')) closeSheet();
+    }
+
+    document.addEventListener('click', e => {
+      if (!e.target || !(e.target instanceof Element)) return;
+      const overlay = document.getElementById('overlay');
+      const sheet = document.getElementById('sheet');
+      const isOverlayOpen = overlay && !overlay.classList.contains('hidden');
+      const insideSheet = sheet ? sheet.contains(e.target) : false;
+
+      const cityWrap = e.target.closest('.city-input-wrap');
+      const chipAdd = e.target.closest('.chip-add-btn');
+      const paletteVisit = e.target.closest('#visitColorPalette');
+      const paletteTheme = e.target.closest('#themeColorPalette');
+      const visitedSettingsRow = e.target.closest('.visited-row');
+
+      if (isOverlayOpen && !insideSheet) return;
+      if (cityWrap || chipAdd || paletteVisit || paletteTheme || visitedSettingsRow) return;
+
+      const list = document.getElementById('suggestList');
+      const wrap = document.getElementById('cityInputWrap');
+      if (wrap && wrap.style.display !== 'none') {
+        const inp = document.getElementById('cityInput');
+        if (inp && inp.value.trim() === '') { closeCityInput(); return; }
+      }
+      if (list) list.style.display = 'none';
+    });
+
+    function commitPendingSelectionsIfDirty() {
+      if (!pendingPrefDirty) return;
+      state.hometown = pendingHt;
+      state.residences = (pendingRes || []).filter(x => x !== state.hometown);
+      pendingPrefDirty = false;
+      saveState();
+      updateUI();
+    }
+
+    function commitVisitedLabelDraftIfDirty() {
+      if (!visitedLabelDraftDirty) return;
+      state.theme.visitedByColor = state.theme.visitedByColor || {};
+      Object.entries(visitedLabelDraftByColor).forEach(([hexLower, label]) => {
+        const h = normalizeHex(hexLower);
+        if (!h) return;
+        state.theme.visitedByColor[h] = state.theme.visitedByColor[h] || {};
+        state.theme.visitedByColor[h].label = String(label || '');
+      });
+      visitedLabelDraftByColor = {};
+      visitedLabelDraftDirty = false;
+      saveState();
+      updateUI();
+    }
+
+    function openPref(code, name) {
+      const status = getStatus(code);
+      const suffix = getPrefSuffix(code);
+      const region = REGION_MAP[code] || '';
+
+      let pill = '';
+      if (status === 'hometown' || status === 'both') pill = `<span class="status-pill pill-hometown">出身地</span>`;
+      else if (status === 'residence') pill = `<span class="status-pill pill-residence">居住地 / 勤務地</span>`;
+      else if (status === 'visited') pill = `<span class="status-pill pill-visited">訪問済み</span>`;
+      else pill = `<span class="status-pill pill-none">未訪問</span>`;
+
+      let body = '';
+      if (status === 'hometown' || status === 'residence' || status === 'both') {
+        body = `<div class="btn-group"><button class="btn btn-ghost" onclick="closeSheet()">閉じる</button></div>`;
+      } else if (status === 'visited' && state.visited[code]) {
+        const v = state.visited[code];
+        const dotColor = normalizeHex(v.color) || normalizeHex(state.theme.visitedDefaultColor) || UNVISITED_COLOR;
+        const shownColor = isVisitedColorVisible(dotColor) ? dotColor : UNVISITED_COLOR;
+        const label = shownColor === UNVISITED_COLOR ? '未訪問' : getVisitedLabelForColor(dotColor);
+
+        let rows = '';
+        rows += `<div class="detail-row"><span class="detail-key">マップの色</span><span class="detail-val"><span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${shownColor};vertical-align:middle"></span>&nbsp;${escapeHtml(label)}</span></div>`;
+        if (v.startDate || v.endDate) {
+          const l = v.startDate === v.endDate || !v.endDate ? v.startDate : (v.startDate + ' 〜 ' + v.endDate);
+          rows += `<div class="detail-row"><span class="detail-key">滞在期間</span><span class="detail-val">${escapeHtml(l)}</span></div>`;
+        }
+        if (v.cities && v.cities.length) rows += `<div class="detail-row"><span class="detail-key">訪問した市</span><span class="detail-val">${escapeHtml(v.cities.join('、'))}</span></div>`;
+        if (v.memo) rows += `<div class="detail-row"><span class="detail-key">メモ</span><span class="detail-val">${escapeHtml(v.memo)}</span></div>`;
+
+        body = `<div class="visit-detail">${rows}</div>
       <div class="btn-group">
         <button class="btn btn-ghost" onclick="editVisit('${code}','${name}')">編集</button>
         <button class="btn btn-ghost" onclick="closeSheet()">閉じる</button>
       </div>
       <button class="del-link" onclick="removeVisit('${code}')">訪問記録を削除</button>`;
-  } else {
-    if(!isThemeReadyForRecording()){
-      body=`<div class="visit-detail">
+      } else {
+        if (!isThemeReadyForRecording()) {
+          body = `<div class="visit-detail">
         <div class="detail-row"><span class="detail-key">要設定</span><span class="detail-val">出身地の色を選択してください</span></div>
       </div>
       <div class="btn-group">
         <button class="btn btn-ghost" onclick="closeSheet()">閉じる</button>
         <button class="btn btn-blue" onclick="openSettings(0)">設定へ</button>
       </div>`;
-    } else {
-      body=visitForm(code,{});
-    }
-  }
+        } else {
+          body = visitForm(code, {});
+        }
+      }
 
-  showSheet(`
+      showSheet(`
     <div class="pref-header">
       <div>
         <div class="pref-name">${escapeHtml(name)}${escapeHtml(suffix)}</div>
@@ -676,27 +1211,29 @@ function openPref(code,name){
       </div>
       ${pill}
     </div>${body}`);
-}
+    }
 
-let currentCities=[];
-let currentPrefCode='';
-let currentPickVisitedColor=null;
+    let currentCities = [];
+    let currentPrefCode = '';
+    let currentPickVisitedColor = null;
+    let visitEndTouched=false;
 
-function visitForm(code,v){
-  const today=new Date().toISOString().slice(0,10);
-  currentCities=[...(v.cities||[])];
-  currentPrefCode=code;
+    function visitForm(code, v) {
+      const today = new Date().toISOString().slice(0, 10);
+      currentCities = [...(v.cities || [])];
+      currentPrefCode = code;
+      visitEndTouched = !!state.visited[code];
 
-  const savedColor=normalizeHex(v.color);
-  currentPickVisitedColor=savedColor || null;
+      const savedColor = normalizeHex(v.color);
+      currentPickVisitedColor = savedColor || null;
 
-  return `
+      return `
     <div class="form-section">
       <span class="form-label">滞在期間</span>
       <div class="date-range-wrap">
-        <input class="form-input" type="date" id="vStart" value="${v.startDate||today}">
+        <input class="form-input" type="date" id="vStart" value="${v.startDate || today}" oninput="syncEndDateIfUntouched()">
         <span class="date-sep">〜</span>
-        <input class="form-input" type="date" id="vEnd" value="${v.endDate||today}">
+        <input class="form-input" type="date" id="vEnd" value="${v.endDate || today}" oninput="markVisitEndTouched()">
       </div>
     </div>
 
@@ -714,7 +1251,7 @@ function visitForm(code,v){
 
     <div class="form-section">
       <span class="form-label">メモ</span>
-      <input class="form-input" type="text" id="vMemo" value="${escapeHtml(v.memo||'')}" placeholder="思い出や感想..." maxlength="80">
+      <input class="form-input" type="text" id="vMemo" value="${escapeHtml(v.memo || '')}" placeholder="思い出や感想..." maxlength="80">
     </div>
 
     <div class="form-section">
@@ -726,297 +1263,309 @@ function visitForm(code,v){
       <button class="btn btn-ghost" onclick="closeSheet()">キャンセル</button>
       <button class="btn btn-green" onclick="saveVisit('${code}')">記録</button>
     </div>`;
-}
+    }
 
-function getVisibleVisitedColorsForInput(){
-  const ht=normalizeHex(state.theme.hometownColor);
-  const res=normalizeHex(state.theme.residenceColor);
-  return RAINBOW_PALETTE_HEX.filter(hex=>{
-    if(hex===ht || hex===res) return false;
-    if(!isVisitedColorVisible(hex)) return false;
-    return true;
-  });
-}
+    function getVisibleVisitedColorsForInput() {
+      const ht = normalizeHex(state.theme.hometownColor);
+      const res = normalizeHex(state.theme.residenceColor);
+      return RAINBOW_PALETTE_HEX.filter(hex => {
+        if (hex === ht || hex === res) return false;
+        if (!isVisitedColorVisible(hex)) return false;
+        return true;
+      });
+    }
 
-function renderVisitColorPalette(){
-  const palette=document.getElementById('visitColorPalette');
-  if(!palette) return;
-  const colors=getVisibleVisitedColorsForInput();
+    function renderVisitColorPalette() {
+      const palette = document.getElementById('visitColorPalette');
+      if (!palette) return;
+      const colors = getVisibleVisitedColorsForInput();
 
-  palette.innerHTML=colors.map(hex=>{
-    const selected=(currentPickVisitedColor && hex===currentPickVisitedColor);
-    return `
-      <button class="color-swatch ${selected?'selected':''}" style="background:${hex}" type="button" data-color="${hex}" onclick="selectVisitColor('${hex}',this)" aria-label="色選択">
+      palette.innerHTML = colors.map(hex => {
+        const selected = (currentPickVisitedColor && hex === currentPickVisitedColor);
+        return `
+      <button class="color-swatch ${selected ? 'selected' : ''}" style="background:${hex}" type="button" data-color="${hex}" onclick="selectVisitColor('${hex}',this)" aria-label="色選択">
         <span class="check"><b style="font-weight:900;">✓</b></span>
       </button>
     `;
-  }).join('');
-}
+      }).join('');
+    }
 
-function renderVisitColorPaletteIfNeeded(){
-  const p=document.getElementById('visitColorPalette');
-  if(p) renderVisitColorPalette();
-}
+    function renderVisitColorPaletteIfNeeded() {
+      const p = document.getElementById('visitColorPalette');
+      if (p) renderVisitColorPalette();
+    }
 
-function selectVisitColor(hex){
-  currentPickVisitedColor=normalizeHex(hex);
-  renderVisitColorPalette();
-}
+    function selectVisitColor(hex) {
+      currentPickVisitedColor = normalizeHex(hex);
+      renderVisitColorPalette();
+    }
 
-function saveVisit(code){
-  if(!isThemeReadyForRecording()){
-    alert('色を設定してください');
-    return;
-  }
-  if(!currentPickVisitedColor){
-    alert('訪問地の色を選択してください');
-    return;
-  }
-  if(!isVisitedColorVisible(currentPickVisitedColor)){
-    alert('選択した色は非表示です');
-    return;
-  }
+    function saveVisit(code) {
+      if (!isThemeReadyForRecording()) {
+        alert('色を設定してください');
+        return;
+      }
+      if (!currentPickVisitedColor) {
+        alert('訪問地の色を選択してください');
+        return;
+      }
+      if (!isVisitedColorVisible(currentPickVisitedColor)) {
+        alert('選択した色は非表示です');
+        return;
+      }
 
-  const startDate=document.getElementById('vStart')?.value||'';
-  const endDate=document.getElementById('vEnd')?.value||startDate;
-  const memo=document.getElementById('vMemo')?.value||'';
+      const startDate = document.getElementById('vStart')?.value || '';
+      const endDate = document.getElementById('vEnd')?.value || startDate;
+      const memo = document.getElementById('vMemo')?.value || '';
 
-  state.visited[code]={
-    startDate,endDate,
-    cities:[...currentCities],
-    memo,
-    color:currentPickVisitedColor
-  };
-  saveState();
-  updateUI();
-  closeSheet();
-}
+      state.visited[code] = {
+        startDate, endDate,
+        cities: [...currentCities],
+        memo,
+        color: currentPickVisitedColor
+      };
+      saveState();
+      updateUI();
+      closeSheet();
+    }
 
-function editVisit(code,name){
-  const v=state.visited[code]||{};
-  showSheet(`
+    function syncEndDateIfUntouched(){
+      const start=document.getElementById('vStart');
+      const end=document.getElementById('vEnd');
+      if(!start || !end) return;
+      if(visitEndTouched) return;
+      end.value = start.value || '';
+    }
+    
+    function markVisitEndTouched(){
+      visitEndTouched = true;
+    }
+    
+    function editVisit(code, name) {
+      const v = state.visited[code] || {};
+      showSheet(`
     <div class="pref-header">
       <div>
         <div class="pref-name">${escapeHtml(name)}${escapeHtml(getPrefSuffix(code))}</div>
-        <div class="pref-region">${escapeHtml(REGION_MAP[code]||'')}</div>
+        <div class="pref-region">${escapeHtml(REGION_MAP[code] || '')}</div>
       </div>
       <span class="status-pill pill-visited">訪問済み</span>
-    </div>${visitForm(code,v)}
+    </div>${visitForm(code, v)}
   `);
-  setTimeout(()=>{
-    renderChips();
-    renderVisitColorPalette();
-  },60);
-}
+      setTimeout(() => {
+        renderChips();
+        renderVisitColorPalette();
+      }, 60);
+    }
 
-function removeVisit(code){
-  delete state.visited[code];
-  saveState();
-  updateUI();
-  closeSheet();
-}
+    function removeVisit(code) {
+      delete state.visited[code];
+      saveState();
+      updateUI();
+      closeSheet();
+    }
 
-function renderChips(){
-  const wrap=document.getElementById('cityChips');
-  if(!wrap) return;
-  const inputWrap=document.getElementById('cityInputWrap');
-  const showAdd=!inputWrap || inputWrap.style.display==='none';
+    function renderChips() {
+      const wrap = document.getElementById('cityChips');
+      if (!wrap) return;
+      const inputWrap = document.getElementById('cityInputWrap');
+      const showAdd = !inputWrap || inputWrap.style.display === 'none';
 
-  const html=currentCities.map(c=>`
+      const html = currentCities.map(c => `
     <button class="chip" onclick="removeCity('${escapeHtml(c)}')">
       <span>${escapeHtml(c)}</span><span class="chip-x">×</span>
     </button>
   `).join('');
 
-  wrap.innerHTML=showAdd ? html + `<button class="chip-add-btn" onclick="openCityInput()">＋追加</button>` : html;
-}
-function renderChipsIfNeeded(){
-  if(document.getElementById('cityChips')) renderChips();
-}
+      wrap.innerHTML = showAdd ? html + `<button class="chip-add-btn" onclick="openCityInput()">＋追加</button>` : html;
+    }
+    function renderChipsIfNeeded() {
+      if (document.getElementById('cityChips')) renderChips();
+    }
 
-function openCityInput(){
-  const wrap=document.getElementById('cityInputWrap');
-  if(!wrap) return;
-  wrap.style.display='block';
-  renderChips();
-  setTimeout(()=>{
-    const inp=document.getElementById('cityInput');
-    if(inp){inp.value='';inp.focus();}
-    showSuggest(currentPrefCode,'');
-  },80);
-}
-function closeCityInput(){
-  const wrap=document.getElementById('cityInputWrap');
-  const list=document.getElementById('suggestList');
-  if(wrap) wrap.style.display='none';
-  if(list) list.style.display='none';
-  renderChips();
-}
-function showSuggest(code,q){
-  const list=document.getElementById('suggestList');
-  if(!list) return;
+    function openCityInput() {
+      const wrap = document.getElementById('cityInputWrap');
+      if (!wrap) return;
+      wrap.style.display = 'block';
+      renderChips();
+      setTimeout(() => {
+        const inp = document.getElementById('cityInput');
+        if (inp) { inp.value = ''; inp.focus(); }
+        showSuggest(currentPrefCode, '');
+      }, 80);
+    }
+    function closeCityInput() {
+      const wrap = document.getElementById('cityInputWrap');
+      const list = document.getElementById('suggestList');
+      if (wrap) wrap.style.display = 'none';
+      if (list) list.style.display = 'none';
+      renderChips();
+    }
+    function showSuggest(code, q) {
+      const list = document.getElementById('suggestList');
+      if (!list) return;
 
-  const cities=CITIES[code]||[];
-  const filtered=q ? cities.filter(c=>c.includes(q)&&!currentCities.includes(c)) : cities.filter(c=>!currentCities.includes(c));
+      const cities = CITIES[code] || [];
+      const filtered = q ? cities.filter(c => c.includes(q) && !currentCities.includes(c)) : cities.filter(c => !currentCities.includes(c));
 
-  if(filtered.length===0){
-    list.innerHTML=q?`<div class="suggest-item" onclick="addCity('${escapeHtml(q)}')">「${escapeHtml(q)}」を追加</div>`:`<div class="suggest-empty">候補なし</div>`;
-  }else{
-    list.innerHTML=filtered.slice(0,12).map(c=>`<div class="suggest-item" onclick="addCity('${escapeHtml(c)}')">${escapeHtml(c)}</div>`).join('');
-  }
-  list.style.display='block';
-}
-function onCityFocus(code){
-  currentPrefCode=code;
-  const inp=document.getElementById('cityInput');
-  showSuggest(code, inp?inp.value.trim():'');
-}
-function onCityInput(code){
-  currentPrefCode=code;
-  const inp=document.getElementById('cityInput');
-  if(!inp) return;
-  showSuggest(code, inp.value.trim());
-}
-function addCity(c){
-  if(!currentCities.includes(c)) currentCities.push(c);
-  closeCityInput();
-}
-function removeCity(c){
-  currentCities=currentCities.filter(x=>x!==c);
-  renderChips();
-}
+      if (filtered.length === 0) {
+        list.innerHTML = q ? `<div class="suggest-item" onclick="addCity('${escapeHtml(q)}')">「${escapeHtml(q)}」を追加</div>` : `<div class="suggest-empty">候補なし</div>`;
+      } else {
+        list.innerHTML = filtered.slice(0, 12).map(c => `<div class="suggest-item" onclick="addCity('${escapeHtml(c)}')">${escapeHtml(c)}</div>`).join('');
+      }
+      list.style.display = 'block';
+    }
+    function onCityFocus(code) {
+      currentPrefCode = code;
+      const inp = document.getElementById('cityInput');
+      showSuggest(code, inp ? inp.value.trim() : '');
+    }
+    function onCityInput(code) {
+      currentPrefCode = code;
+      const inp = document.getElementById('cityInput');
+      if (!inp) return;
+      showSuggest(code, inp.value.trim());
+    }
+    function addCity(c) {
+      if (!currentCities.includes(c)) currentCities.push(c);
+      closeCityInput();
+    }
+    function removeCity(c) {
+      currentCities = currentCities.filter(x => x !== c);
+      renderChips();
+    }
 
-// ============ Settings ============
-function openSettings(tab){
-  settingsTab=tab||0;
+    // ============ Settings ============
+    function openSettings(tab) {
+      settingsTab = tab || 0;
 
-  pendingHt=state.hometown;
-  pendingRes=[...(state.residences||[])];
-  pendingTheme=JSON.parse(JSON.stringify(state.theme||{}));
-  if(!pendingTheme.visitedByColor) pendingTheme.visitedByColor={};
+      pendingHt = state.hometown;
+      pendingRes = [...(state.residences || [])];
+      pendingTheme = JSON.parse(JSON.stringify(state.theme || {}));
+      if (!pendingTheme.visitedByColor) pendingTheme.visitedByColor = {};
 
-  pendingPrefDirty=false;
+      pendingPrefDirty = false;
 
-  if(settingsTab===2){
-    visitedLabelDraftByColor={};
-    visitedLabelDraftDirty=false;
-  }
+      if (settingsTab === 2) {
+        visitedLabelDraftByColor = {};
+        visitedLabelDraftDirty = false;
+      }
 
-  renderSettingsSheet();
-}
+      renderSettingsSheet();
+    }
 
-function switchSettingsTab(tab){
-  // タブ移動タイミングでまとめて保存（0,1,2の全下書きをコミット）
-  commitPendingSelectionsIfDirty();
-  commitVisitedLabelDraftIfDirty();
+    function switchSettingsTab(tab) {
+      // タブ移動タイミングでまとめて保存（0,1,2の全下書きをコミット）
+      commitPendingSelectionsIfDirty();
+      commitVisitedLabelDraftIfDirty();
 
-  settingsTab=tab;
-  if(settingsTab===2){
-    visitedLabelDraftByColor={};
-    visitedLabelDraftDirty=false;
-  }
+      settingsTab = tab;
+      if (settingsTab === 2) {
+        visitedLabelDraftByColor = {};
+        visitedLabelDraftDirty = false;
+      }
 
-  renderSettingsSheet();
-}
+      renderSettingsSheet();
+    }
 
-function onThemeColorPick(hex){
-  const h=normalizeHex(hex);
-  if(!h) return;
+    function onThemeColorPick(hex) {
+      const h = normalizeHex(hex);
+      if (!h) return;
 
-  const htColor=normalizeHex(state.theme.hometownColor);
-  if(settingsTab===1 && htColor && h===htColor){
-    return;
-  }
+      const htColor = normalizeHex(state.theme.hometownColor);
+      if (settingsTab === 1 && htColor && h === htColor) {
+        return;
+      }
 
-  if(settingsTab===0){
-    state.hometownColor=h;
-    state.theme.hometownColor=h;
-  }else if(settingsTab===1){
-    state.theme.residenceColor=h;
-  }else{
-    state.theme.visitedDefaultColor=h;
-  }
+      if (settingsTab === 0) {
+        state.hometownColor = h;
+        state.theme.hometownColor = h;
+      } else if (settingsTab === 1) {
+        state.theme.residenceColor = h;
+      } else {
+        state.theme.visitedDefaultColor = h;
+      }
 
-  saveState();
-  updateUI();
-  renderSettingsSheet();
-}
+      saveState();
+      updateUI();
+      renderSettingsSheet();
+    }
 
-function renderThemeColorPalette(){
-  const palette=document.getElementById('themeColorPalette');
-  if(!palette) return;
+    function renderThemeColorPalette() {
+      const palette = document.getElementById('themeColorPalette');
+      if (!palette) return;
 
-  const selectedLower=normalizeHex(
-    settingsTab===0 ? state.theme.hometownColor : (settingsTab===1 ? state.theme.residenceColor : state.theme.visitedDefaultColor)
-  );
+      const selectedLower = normalizeHex(
+        settingsTab === 0 ? state.theme.hometownColor : (settingsTab === 1 ? state.theme.residenceColor : state.theme.visitedDefaultColor)
+      );
 
-  const htColor=normalizeHex(state.theme.hometownColor);
+      const htColor = normalizeHex(state.theme.hometownColor);
 
-  palette.innerHTML=RAINBOW_PALETTE_HEX.map(hex=>{
-    const selected=(selectedLower && hex===selectedLower);
+      palette.innerHTML = RAINBOW_PALETTE_HEX.map(hex => {
+        const selected = (selectedLower && hex === selectedLower);
 
-    const isForbidden=(settingsTab===1 && htColor && hex===htColor);
-    if(isForbidden){
-      return `
+        const isForbidden = (settingsTab === 1 && htColor && hex === htColor);
+        if (isForbidden) {
+          return `
         <button class="color-swatch" style="background:${hex};opacity:.35;cursor:not-allowed" type="button" aria-label="選択不可">
           <span class="check"><b style="font-weight:900;">✓</b></span>
         </button>
       `;
-    }
+        }
 
-    return `
-      <button class="color-swatch ${selected?'selected':''}" style="background:${hex}" type="button" data-color="${hex}" onclick="onThemeColorPick('${hex}',this)" aria-label="色選択">
+        return `
+      <button class="color-swatch ${selected ? 'selected' : ''}" style="background:${hex}" type="button" data-color="${hex}" onclick="onThemeColorPick('${hex}',this)" aria-label="色選択">
         <span class="check"><b style="font-weight:900;">✓</b></span>
       </button>
     `;
-  }).join('');
-}
+      }).join('');
+    }
 
-function renderThemeColorPaletteIfNeeded(){
-  const p=document.getElementById('themeColorPalette');
-  if(p) renderThemeColorPalette();
-}
+    function renderThemeColorPaletteIfNeeded() {
+      const p = document.getElementById('themeColorPalette');
+      if (p) renderThemeColorPalette();
+    }
 
-function renderSettingsSheet(){
-  if(settingsTab===0 || settingsTab===1){
-    const isHt=settingsTab===0;
+    function renderSettingsSheet() {
+      if (settingsTab === 0 || settingsTab === 1) {
+        const isHt = settingsTab === 0;
 
-    const htColor=normalizeHex(state.theme.hometownColor) || UNVISITED_COLOR;
-    const resColor=normalizeHex(state.theme.residenceColor) || UNVISITED_COLOR;
+        const htColor = normalizeHex(state.theme.hometownColor) || UNVISITED_COLOR;
+        const resColor = normalizeHex(state.theme.residenceColor) || UNVISITED_COLOR;
 
-    let grid='';
-    PREFS_LIST.forEach(p=>{
-      const onclick=`onclick="settingsTogglePref('${p.id}',this)"`;
+        let grid = '';
+        PREFS_LIST.forEach(p => {
+          const onclick = `onclick="settingsTogglePref('${p.id}',this)"`;
 
-      if(isHt){
-        if(pendingHt===p.id){
-          grid+=`<div class="pref-opt" ${onclick} style="background:${htColor};border-color:${htColor};color:#fff;">${p.name}</div>`;
-          return;
-        }
-      }else{
-        if(pendingHt===p.id){
-          grid+=`<div class="pref-opt disabled-ht">${p.name}</div>`;
-          return;
-        }
+          if (isHt) {
+            if (pendingHt === p.id) {
+              grid += `<div class="pref-opt" ${onclick} style="background:${htColor};border-color:${htColor};color:#fff;">${p.name}</div>`;
+              return;
+            }
+          } else {
+            if (pendingHt === p.id) {
+              grid += `<div class="pref-opt disabled-ht">${p.name}</div>`;
+              return;
+            }
 
-        if(pendingRes.includes(p.id)){
-          grid+=`<div class="pref-opt" ${onclick} style="background:${resColor};border-color:${resColor};color:#fff;">${p.name}</div>`;
-          return;
-        }
-      }
+            if (pendingRes.includes(p.id)) {
+              grid += `<div class="pref-opt" ${onclick} style="background:${resColor};border-color:${resColor};color:#fff;">${p.name}</div>`;
+              return;
+            }
+          }
 
-      grid+=`<div class="pref-opt" ${onclick}>${p.name}</div>`;
-    });
+          grid += `<div class="pref-opt" ${onclick}>${p.name}</div>`;
+        });
 
-    const title='設定';
-    const sub=isHt?'色を設定してください':'色を設定してください';
+        const title = '設定';
+        const sub = isHt ? '色を設定してください' : '色を設定してください';
 
-    showSheet(`
+        showSheet(`
       <div class="settings-title">${title}</div>
       <div class="settings-tabs">
-        <button class="stab ${settingsTab===0?'active':''}" onclick="switchSettingsTab(0)">出身地</button>
-        <button class="stab ${settingsTab===1?'active':''}" onclick="switchSettingsTab(1)">居住地 / 勤務地</button>
-        <button class="stab ${settingsTab===2?'active':''}" onclick="switchSettingsTab(2)">色設定</button>
+        <button class="stab ${settingsTab === 0 ? 'active' : ''}" onclick="switchSettingsTab(0)">出身地</button>
+        <button class="stab ${settingsTab === 1 ? 'active' : ''}" onclick="switchSettingsTab(1)">居住地 / 勤務地</button>
+        <button class="stab ${settingsTab === 2 ? 'active' : ''}" onclick="switchSettingsTab(2)">色設定</button>
       </div>
 
       <div class="settings-sub">${sub}</div>
@@ -1025,7 +1574,7 @@ function renderSettingsSheet(){
         <div class="color-palette" id="themeColorPalette"></div>
       </div>
 
-      <div class="settings-sub" style="margin-bottom:10px">${isHt?'複数選択不可':'複数選択可'}</div>
+      <div class="settings-sub" style="margin-bottom:10px">${isHt ? '複数選択不可' : '複数選択可'}</div>
       <div class="pref-grid">${grid}</div>
 
       <div class="btn-group" style="margin-bottom:16px">
@@ -1033,13 +1582,13 @@ function renderSettingsSheet(){
       </div>
     `);
 
-    setTimeout(()=>{
-      renderThemeColorPalette();
-    },40);
-    return;
-  }
+        setTimeout(() => {
+          renderThemeColorPalette();
+        }, 40);
+        return;
+      }
 
-  showSheet(`
+      showSheet(`
     <div class="settings-title">設定</div>
     <div class="settings-tabs">
       <button class="stab" onclick="switchSettingsTab(0)">出身地</button>
@@ -1057,50 +1606,50 @@ function renderSettingsSheet(){
       <button class="btn btn-ghost" onclick="closeSheet()">閉じる</button>
     </div>
   `);
-}
-
-function settingsTogglePref(id,el){
-  // 県クリックは「即反映」しない。下書きだけ更新して、画面は再描画する
-  if(settingsTab===0){
-    pendingHt=(pendingHt===id)?null:id;
-    // 出身地を変更したら、居住地の下書きから出身地を消す（色の重複回避）
-    pendingRes=(pendingRes||[]).filter(x=>x!==pendingHt);
-  }else if(settingsTab===1){
-    if(pendingHt===id) return;
-    if(pendingRes.includes(id)){
-      pendingRes=pendingRes.filter(x=>x!==id);
-      el.classList.remove('sel-res');
-    }else{
-      pendingRes.push(id);
-      el.classList.add('sel-res');
     }
-    pendingRes=(pendingRes||[]).filter(x=>x!==pendingHt);
-  }
 
-  pendingPrefDirty=true;
+    function settingsTogglePref(id, el) {
+      // 県クリックは「即反映」しない。下書きだけ更新して、画面は再描画する
+      if (settingsTab === 0) {
+        pendingHt = (pendingHt === id) ? null : id;
+        // 出身地を変更したら、居住地の下書きから出身地を消す（色の重複回避）
+        pendingRes = (pendingRes || []).filter(x => x !== pendingHt);
+      } else if (settingsTab === 1) {
+        if (pendingHt === id) return;
+        if (pendingRes.includes(id)) {
+          pendingRes = pendingRes.filter(x => x !== id);
+          el.classList.remove('sel-res');
+        } else {
+          pendingRes.push(id);
+          el.classList.add('sel-res');
+        }
+        pendingRes = (pendingRes || []).filter(x => x !== pendingHt);
+      }
 
-  // 地図や保存はしない。UI（選択中の色だけ）を今すぐ反映
-  renderSettingsSheet();
-}
+      pendingPrefDirty = true;
 
-function renderVisitedSettingsRows(){
-  const ht=normalizeHex(state.theme.hometownColor);
-  const res=normalizeHex(state.theme.residenceColor);
+      // 地図や保存はしない。UI（選択中の色だけ）を今すぐ反映
+      renderSettingsSheet();
+    }
 
-  return RAINBOW_PALETTE_HEX
-    .filter(hex=>hex!==ht && hex!==res)
-    .map(hex=>{
-      const meta=state.theme.visitedByColor?.[hex] || {};
-      const draftLabel=visitedLabelDraftByColor?.[hex];
-      const labelToShow=(draftLabel!==undefined)
-        ? draftLabel
-        : (meta.label && String(meta.label).trim().length>0 ? String(meta.label).trim() : '');
+    function renderVisitedSettingsRows() {
+      const ht = normalizeHex(state.theme.hometownColor);
+      const res = normalizeHex(state.theme.residenceColor);
 
-      const visible=(meta.visible===false)?false:true;
-      const isDefault=(state.theme.visitedDefaultColor && hex===normalizeHex(state.theme.visitedDefaultColor));
+      return RAINBOW_PALETTE_HEX
+        .filter(hex => hex !== ht && hex !== res)
+        .map(hex => {
+          const meta = state.theme.visitedByColor?.[hex] || {};
+          const draftLabel = visitedLabelDraftByColor?.[hex];
+          const labelToShow = (draftLabel !== undefined)
+            ? draftLabel
+            : (meta.label && String(meta.label).trim().length > 0 ? String(meta.label).trim() : '');
 
-      return `
-        <div class="visited-row ${isDefault?'selected':''}">
+          const visible = (meta.visible === false) ? false : true;
+          const isDefault = (state.theme.visitedDefaultColor && hex === normalizeHex(state.theme.visitedDefaultColor));
+
+          return `
+        <div class="visited-row ${isDefault ? 'selected' : ''}">
           <div class="visited-row-swatch" style="background:${hex}"></div>
 
           <div class="visited-row-main">
@@ -1111,68 +1660,69 @@ function renderVisitedSettingsRows(){
               oninput="onVisitedLabel('${hex}',this.value)">
           </div>
 
-          <button class="visited-toggle ${visible?'on':''}" type="button" onclick="onVisitedVisible('${hex}')">
-            ${visible?'表示':'非表示'}
+          <button class="visited-toggle ${visible ? 'on' : ''}" type="button" onclick="onVisitedVisible('${hex}')">
+            ${visible ? '表示' : '非表示'}
           </button>
         </div>
       `;
-    }).join('');
-}
+        }).join('');
+    }
 
-function onVisitedLabel(hex,value){
-  const k=normalizeHex(hex);
-  if(!k) return;
+    function onVisitedLabel(hex, value) {
+      const k = normalizeHex(hex);
+      if (!k) return;
 
-  visitedLabelDraftByColor=visitedLabelDraftByColor || {};
-  visitedLabelDraftByColor[k]=String(value||'');
+      visitedLabelDraftByColor = visitedLabelDraftByColor || {};
+      visitedLabelDraftByColor[k] = String(value || '');
 
-  visitedLabelDraftDirty=true;
+      visitedLabelDraftDirty = true;
 
-  updateLegend();
-}
+      updateLegend();
+    }
 
-function onVisitedVisible(hex){
-  const k=normalizeHex(hex);
-  if(!k) return;
+    function onVisitedVisible(hex) {
+      const k = normalizeHex(hex);
+      if (!k) return;
 
-  state.theme.visitedByColor=state.theme.visitedByColor||{};
-  state.theme.visitedByColor[k]=state.theme.visitedByColor[k]||{};
-  const cur=state.theme.visitedByColor[k].visible;
-  state.theme.visitedByColor[k].visible=(cur===false)?true:false;
+      state.theme.visitedByColor = state.theme.visitedByColor || {};
+      state.theme.visitedByColor[k] = state.theme.visitedByColor[k] || {};
+      const cur = state.theme.visitedByColor[k].visible;
+      state.theme.visitedByColor[k].visible = (cur === false) ? true : false;
 
-  if(!isVisitedColorVisible(state.theme.visitedDefaultColor)){
-    const ht=normalizeHex(state.theme.hometownColor);
-    const res=normalizeHex(state.theme.residenceColor);
-    const first=RAINBOW_PALETTE_HEX.find(c=>c!==ht && c!==res && isVisitedColorVisible(c));
-    state.theme.visitedDefaultColor=first || null;
-  }
+      if (!isVisitedColorVisible(state.theme.visitedDefaultColor)) {
+        const ht = normalizeHex(state.theme.hometownColor);
+        const res = normalizeHex(state.theme.residenceColor);
+        const first = RAINBOW_PALETTE_HEX.find(c => c !== ht && c !== res && isVisitedColorVisible(c));
+        state.theme.visitedDefaultColor = first || null;
+      }
 
-  commitVisitedLabelDraftIfDirty();
-  saveState();
-  updateUI();
-  renderSettingsSheet();
-}
+      commitVisitedLabelDraftIfDirty();
+      saveState();
+      updateUI();
+      renderSettingsSheet();
+    }
 
-loadState();
+    loadState();
 
-const CDN1='https://unpkg.com/jpn-atlas@1/japan/japan.json';
-const CDN2='https://cdn.jsdelivr.net/npm/jpn-atlas@1/japan/japan.json';
-const CDN3='https://cdn.jsdelivr.net/npm/jpn-atlas/japan/japan.json';
+    const CDN1 = 'https://unpkg.com/jpn-atlas@1/japan/japan.json';
+    const CDN2 = 'https://cdn.jsdelivr.net/npm/jpn-atlas@1/japan/japan.json';
+    const CDN3 = 'https://cdn.jsdelivr.net/npm/jpn-atlas/japan/japan.json';
 
-d3.json(CDN1).catch(()=>d3.json(CDN2)).catch(()=>d3.json(CDN3)).then(japan=>{
-  initMap(japan);
-  updateUI();
+    d3.json(CDN1).catch(() => d3.json(CDN2)).catch(() => d3.json(CDN3)).then(japan => {
+      initMap(japan);
+      updateUI();
 
-  if(!isThemeReadyForRecording()){
-    setTimeout(()=>openSettings(0),400);
-  }
-}).catch(err=>{
-  console.error('Map load error:',err);
-  const loading=document.getElementById('loading');
-  if(loading){
-    loading.innerHTML='地図の読み込みに失敗しました。<br>インターネット接続を確認して再読み込みしてください。<br><br><button onclick="location.reload()" style="padding:10px 22px;border-radius:12px;border:none;background:#2d7a4f;color:#fff;font-size:15px;font-weight:700;cursor:pointer">再読み込み</button>';
-  }
-});
-</script>
+      if (!isThemeReadyForRecording()) {
+        setTimeout(() => openSettings(0), 400);
+      }
+    }).catch(err => {
+      console.error('Map load error:', err);
+      const loading = document.getElementById('loading');
+      if (loading) {
+        loading.innerHTML = '地図の読み込みに失敗しました。<br>インターネット接続を確認して再読み込みしてください。<br><br><button onclick="location.reload()" style="padding:10px 22px;border-radius:12px;border:none;background:#2d7a4f;color:#fff;font-size:15px;font-weight:700;cursor:pointer">再読み込み</button>';
+      }
+    });
+  </script>
 </body>
+
 </html>
